@@ -1,0 +1,31 @@
+# Project documents — keep local, don't commit
+docs/
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Local data / datasets
+data/
+
+# Experiment outputs
+results/
+
+# Locally downloaded/generated model checkpoints
+models/
+
+# OS / editor files
+.DS_Store
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
