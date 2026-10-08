@@ -1,5 +1,6 @@
-# Project documents — keep local, don't commit
-docs/
+# Project PDFs (paper copy, course proposal) — keep local, don't commit.
+# The markdown docs in docs/ are tracked.
+docs/*.pdf
 
 # Python
 .venv/
@@ -11,8 +12,16 @@ __pycache__/
 # Local data / datasets
 data/
 
-# Experiment outputs
-results/
+# Scratch output of the training scripts (run from inside MELD/ or IEMOCAP/).
+# Curated copies of the results live in the tracked top-level results/ folder.
+/MELD/results/
+/IEMOCAP/results/
+
+# Per-run model weights (~23 MB each); never committed
+**/best_model.pkl
+
+# Local staging folder for artifacts downloaded from Google Drive
+/drive_export/
 
 # Locally downloaded/generated model checkpoints
 models/
