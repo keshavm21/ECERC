@@ -4,19 +4,51 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-Official PyTorch implementation of **ECERC** (Evidence-Cause Attention Network for Multi-Modal Emotion Recognition in Conversation, ACL 2025), cloned from `TAN-OpenLab/ECERC`. This copy is the base for a course project ("ECERC Revisited", proposal in `docs/Project_SOP.pdf`, git-ignored) that keeps the ECERC backbone unchanged and adds three components, each to be ablated in isolation:
+A fork of the official PyTorch implementation of **ECERC** (Evidence-Cause Attention Network for Multi-Modal Emotion Recognition in Conversation, ACL 2025, `TAN-OpenLab/ECERC`). It holds **Person B's part** (Keshav Mishra) of the three-person course project "ECERC Revisited". The proposal is `docs/Project_SOP.pdf`, which is git-ignored. The project keeps the ECERC backbone unchanged and studies three components, one per team member:
 
-1. **Confusion-aware contrastive regularizer** on the fused pre-softmax features, for the pairs hap/exc, ang/fru (IEMOCAP) and dis/ang (MELD).
-2. **Class-balanced / focal loss plus minority oversampling**, targeting Fear and Disgust on MELD.
-3. **Confidence-Aware Cause Gating (CACG)**: an input-conditioned gating temperature with an entropy-calibration loss `L_gate`.
+1. **Confusion-aware contrastive regularizer**: not in this repo.
+2. **Class imbalance on MELD (Limitation 2)**: class-balanced weights, focal exponent and Fear/Disgust oversampling. **This repo.**
+3. **Confidence-Aware Cause Gating (CACG)**: not in this repo.
 
-The combined objective is `L = L_CB-CE + λ1·L_contrast + λ2·L_gate`. Reproduction targets (paper): IEMOCAP 71.78 wF1 / 71.60 Acc, MELD 66.46 wF1 / 67.32 Acc. The project also reports macro-F1, per-class F1, confusion matrices and ECE/reliability diagrams. None of these are computed by the current code; it reports only weighted F1, accuracy, `classification_report` and the confusion matrix.
+The Limitation 2 study is complete. It found **no test improvement** over the original objective, and that negative result is the outcome. The full write-up is `docs/report.md`. Paper reference numbers are MELD 66.46 wF1 / 67.32 Acc, averaged over 3 released checkpoints. Only `ECERC_MODEL.pkl` was evaluated here; this is "R0" (67.55 / 66.58 on a Colab T4).
+
+## Repository layout
+
+| Path | What it is |
+|---|---|
+| `README.md` | Evaluator landing page |
+| `docs/report.md` | Full report |
+| `docs/reproduce.md` | Reproduction steps |
+| `docs/upstream_README.md` | Original ECERC README |
+| `MELD/train_imbalance.py` | Person B training and evaluation script. Variants: R0 `--eval_only`, B0 (no options), CB `--cb_beta`, FL `--gamma`, OS `--oversample --os_rho`. Adds macro-F1, per-class P/R/F1/TP/FP/FN, confusion matrices and saved predictions. |
+| `MELD/analyze_imbalance.py` | `compare` (epoch-by-epoch equality of two runs) and `summary --split valid\|test` (tables, paired Δ vs B0, confusion-matrix PNGs, pilot rule) |
+| `notebooks/01–03_*.ipynb` | Executed Colab notebooks: the execution evidence. Code cells and outputs are **never edited**; their structure and quirks are documented in `notebooks/README.md` |
+| `results/` | Curated saved outputs of every reported run (stage0, stage1, stage2): metrics.json, config.json, epochs.csv, logs, prediction CSVs and summaries. **No `best_model.pkl`** |
+| `scripts/make_figures.py` | Builds `docs/figures/*.png` from `results/stage2/runs/*/metrics.json` |
+| `IEMOCAP/`, other `MELD/` files, `requirement.yml`, `OS_info.txt` | Upstream, unchanged |
+
+ECE and reliability diagrams are **not** computed anywhere in this repo.
+
+## Rules for working in this repo
+
+- **Do not modify any upstream file.** This means everything under `IEMOCAP/`, the upstream `MELD/` files and the checkpoints.
+- **Do not modify `MELD/train_imbalance.py` or `MELD/analyze_imbalance.py`.** Their SHA-256 hashes are recorded in the notebooks (`2ab7406b…` and `6fe10b21…`) and tie the results to the code. New analysis goes in new files.
+- **Never invent or adjust numbers.** Every number in the docs must come from the notebook outputs or the files in `results/`.
+- **Describe the configurations exactly:**
+  - B0 is the original MELD objective, which is already **focal loss with γ = 1**.
+  - CB adds class-balanced α weights **inside that γ = 1 focal loss**, not cross-entropy.
+  - FL2 changes γ from 1 to 2.
+  - OS changes only the training sampler.
+- **Describe the use of the test set exactly.** Selection used validation only: the checkpoint is the epoch with the best validation wF1, and the pilot used validation macro-F1. The test set *was* evaluated and logged every epoch, inherited from upstream `train.py`. Never write that the test set was not evaluated.
+- **Scratch output is not committed.** `MELD/results/` is git-ignored script output. Curated copies go in the top-level `results/`.
 
 ## Environment and commands
 
 ```
-conda env create -f requirement.yml -n ecerc   # Python 3.9, PyTorch, CUDA 11.4 / cuDNN 8.2 (authors used Windows 10 + A100)
+conda env create -f requirement.yml -n ecerc   # upstream env: Python 3.9, CUDA 11.4 / cuDNN 8.2 (authors: Windows 10 + A100)
 ```
+
+The reported Limitation 2 runs did **not** use this environment. They ran on Google Colab with a Tesla T4, Python 3.13.15, PyTorch 2.11.0+cu130, NumPy 2.1.3 and scikit-learn 1.6.1. In that environment the runs were deterministic across sessions.
 
 There are no tests, linter or build step. Each dataset folder is a self-contained script set. **Run scripts from inside that folder**, because imports are local (`from model import ECERC`) and data paths are relative:
 
@@ -24,9 +56,13 @@ There are no tests, linter or build step. Each dataset folder is a self-containe
 cd IEMOCAP && python inference.py          # evaluate ECERC_MODEL.pkl on the test set
 cd IEMOCAP && python train.py              # train from scratch
 cd MELD    && python inference.py --load_model_state_dir ECERC_MODEL.pkl
+cd MELD    && python train_imbalance.py --dry_run [variant options]   # checks only; works without a GPU
+cd MELD    && python train_imbalance.py --seed 0 [--cb_beta B | --gamma G | --oversample --os_rho R]
+cd MELD    && python analyze_imbalance.py summary --split test results/<run dirs>
+python scripts/make_figures.py             # from the repo root
 ```
 
-Data is not in the repo. Download the preprocessed pickles (Google Drive link in README.md) into a sibling `../data/` folder. The dataloaders hard-code these paths and ignore `--data_dir`:
+Data is not in the repo. Download the preprocessed pickles (Google Drive link in `docs/upstream_README.md`) into `data/` at the repo root, which is `../data/` relative to each dataset folder. The dataloaders hard-code these paths and ignore `--data_dir`:
 - `../data/iemocap/IEMOCAP_features.pkl`, `iemocap_emotion_features_roberta.pkl`, `iemocap_emotion_semantic_features_roberta.pkl`
 - `../data/meld/meld_emotion_semantic_features_roberta.pkl`
 
@@ -70,8 +106,10 @@ Note for CACG: the code has **no softmax over the four cause types and no temper
 ## Gotchas
 
 - **CPU runs crash.** In `ECERC.forward`, `imask` and `mask` are assigned only inside `if self.cuda_flag:`, so running without CUDA (e.g. on macOS) raises `NameError`. `torch.load` for the checkpoints may also need `map_location='cpu'`.
-- `train_or_eval_model` reads the module-level global `args` (`args.feature_type`), so the scripts only work when run as `__main__` and cannot be imported.
-- `train.py` **never saves a checkpoint**: `--output_dir` is unused. It prints the test score at the epoch with the best validation F1 (and, on MELD, also at the best validation loss). Early stopping requires both the F1 patience and the loss patience to run out.
+- `train_or_eval_model` reads the module-level global `args` (`args.feature_type`), so it only works when `train.py` runs as `__main__`. Importing other helpers from `train.py` is fine; `train_imbalance.py` imports `get_MELD_bert_loaders` and `seed_everything`, and has its own epoch loop.
+- Upstream `train.py` **never saves a checkpoint**: `--output_dir` is unused. It prints the test score at the epoch with the best validation F1 (and, on MELD, also at the best validation loss). Early stopping requires both the F1 patience and the loss patience to run out. `train_imbalance.py` keeps this selection logic but also saves the selected epoch's weights as `best_model.pkl`.
 - MELD's dataset returns `videoVisual` in slot 3 and `videoAudio` in slot 4, while the training loop unpacks them as `audio, vision`. The model then slices `U_e` using `d_a=300, d_v=342`, so on MELD the "audio" and "visual" slices do not line up with the real modalities. The released checkpoint was trained this way. Do not "fix" the order when evaluating the pretrained weights. If the fix is wanted, retrain and record it as a deviation from the baseline.
 - `feature_type='text'` is accepted, but the model always slices `U_e` into T/A/V. Only `multi` actually works.
-- Exact reproduction depends on matching the pinned environment (`cudnn.deterministic=True` is set in `seed_everything`).
+- Exact reproduction depends on matching the environment (`cudnn.deterministic=True` is set in `seed_everything`).
+- Every MELD run evaluates and logs the **test set every epoch**, inherited from `train.py`. Selection reads validation only.
+- `train_imbalance.py` refuses to overwrite a finished run folder without `--overwrite`.
