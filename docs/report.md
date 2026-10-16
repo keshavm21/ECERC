@@ -3,7 +3,7 @@
 **Author:** Keshav Mishra (Person B, *ECERC Revisited* course project)
 **Experiments run:** October 2026, Google Colab (NVIDIA Tesla T4)
 **Code:** [`MELD/train_imbalance.py`](../MELD/train_imbalance.py), [`MELD/analyze_imbalance.py`](../MELD/analyze_imbalance.py)
-**Raw evidence:** [`notebooks/`](../notebooks/) (executed Colab notebooks) and [`results/`](../results/) (saved run outputs)
+**Raw evidence:** [`notebooks/`](../notebooks/) (executed Colab notebooks) and [`results/`](../results/) (saved metrics and summaries)
 
 ---
 
@@ -125,9 +125,20 @@ The experiment had three stages:
 - PyTorch 2.11.0+cu130 (CUDA 13.0);
 - NumPy 2.1.3, scikit-learn 1.6.1, pandas 2.2.3.
 
-**This differs from the upstream environment** (`requirement.yml`: Python 3.9, CUDA 11.4 / cuDNN 8.2, Windows 10, NVIDIA A100). Absolute numbers may therefore differ slightly from what the authors' environment would produce.
+**This differs from the upstream environment:**
 
-**Determinism in this environment.** Upstream `seed_everything` with `cudnn.deterministic = True` made runs repeatable on the T4. B0 seed 0, and the seed-0 runs of CB0.999, FL2 and OS2, were each run twice in separate Colab sessions (notebooks 02 and 03). Each pair printed identical results: the same selected epoch and the same validation and test metrics.
+- `requirement.yml` pins Python 3.9.1, PyTorch 2.0.1 (CUDA 11.8 build), NumPy 1.25.0 and scikit-learn 1.3.2;
+- `OS_info.txt` records Windows 10, an NVIDIA A100 80GB, CUDA 11.4 and cuDNN 8.2.4.
+
+Absolute numbers may therefore differ slightly from what the authors' environment would produce.
+
+**Determinism in this environment.** Upstream `seed_everything` with `cudnn.deterministic = True` made runs repeatable on the T4. B0 seed 0, and the seed-0 runs of CB0.999, FL2 and OS2, were each run twice in separate Colab sessions (notebooks 02 and 03). For each pair:
+
+- the printed results are identical: the same selected epoch and the same validation and test metrics;
+- the saved `metrics.json` and prediction files are byte-identical;
+- the per-epoch log is identical apart from wall-clock time.
+
+See [`results/README.md`](../results/README.md).
 
 **Metrics.** All metrics are percentages:
 
@@ -151,9 +162,9 @@ R0 is the authors' released `MELD/ECERC_MODEL.pkl` (SHA-256 `0f44a6e5…`), eval
 |---|---|---|---|---|---|
 | R0, test | 67.55 | 66.58 | 51.36 | 29.27 | 32.08 |
 | R0, validation | 67.00 | 65.88 | 54.42 | 30.77 | 42.11 |
-| *Paper (mean of 3 released checkpoints), test* | *67.32* | *66.46* | — | — | — |
+| *Paper (Table 3; average over 3 runs), test* | *67.32* | *66.46* | — | — | — |
 
-R0 is **one** checkpoint. The paper's figures average three released checkpoints (`ECERC_MODEL`, `_2`, `_3`), and `_2` and `_3` were not evaluated here. R0 is therefore a check of the released checkpoint in my environment, **not a reproduction of the paper's three-run average**.
+R0 is **one** checkpoint. According to the upstream README, the paper's figures are an average over 3 runs. The authors released three checkpoints (`ECERC_MODEL`, `_2`, `_3`), and `_2` and `_3` were not evaluated here. R0 is therefore a check of the released checkpoint in my environment, **not a reproduction of the paper's 3-run average**.
 
 ### 4.2 B0 seed 0 and the equivalence check
 
@@ -193,7 +204,7 @@ On test, B0 seed 0 is within 0.04 points of R0 on accuracy and weighted F1.
 
 ## 5. Stage 1: Pilot (validation only)
 
-Evidence: second part of [notebook 02](../notebooks/02_stage0_retrain_and_stage1_pilot.ipynb). Summary: [`results/stage1/`](../results/stage1/).
+Evidence: second part of [notebook 02](../notebooks/02_stage0_retrain_and_stage1_pilot.ipynb), where the pilot summary and choice are printed in cells 35 and 39 and the record in cell 40. No Stage 1 files are saved in [`results/`](../results/): the pilot summary folder and record were not part of the exported results. The seed-0 CB0.999, FL2 and OS2 pilot runs reappear as the seed-0 rows of the Stage 2 summaries (§6).
 
 **Design.**
 
@@ -305,7 +316,7 @@ Test support is 50 Fear and 68 Disgust utterances. TP, FP and FN are means per r
 
 The extra predictions fall below the threshold for both classes, so F1 decreased even though recall rose.
 
-**Confusion matrices.** The matrices for B0 and CB0.999, summed over the three seeds, are in [`results/stage2/summary_test/`](../results/stage2/summary_test/) (`confusion_B0.png`, `confusion_CB0.999.png`, plus CSVs). Matrices for the other configurations, and for the validation split, are alongside them.
+**Confusion matrices.** The matrices for B0 and CB0.999, summed over the three seeds, are in [`results/stage2/summary_test/`](../results/stage2/summary_test/) (`confusion_B0.png`, `confusion_CB0.999.png`). Matrices for the other configurations, and for the validation split, are alongside them.
 
 **Other variants.**
 
@@ -405,10 +416,10 @@ The validation per-run table, the validation Fear/Disgust table and the paired v
 | R0 via upstream `inference.py` | 01 | — |
 | R0 via `--eval_only` | 02, 03 | `results/stage0/R0_ECERC_MODEL/` |
 | Upstream `train.py` seed 0 log, equivalence check, hash check | 02 | `results/stage0/orig_train_s0.log`, `results/stage0/baseline_sha256.txt` |
-| Pilot runs and pilot choice | 02 | `results/stage1/` |
-| 15 Stage 2 runs, validation and test summaries | 03 | `results/stage2/runs/`, `results/stage2/summary_valid/`, `results/stage2/summary_test/` |
-| Figures 1–3 | — | `docs/figures/`, generated by `scripts/make_figures.py` from `results/stage2/runs/*/metrics.json` |
-| Marginal-precision table (§6.2) | — | derived from the per-run recall and precision above, with test supports 50 and 68 |
+| Pilot runs and pilot choice | 02 (cells 30–35, 39, 40) | notebook output only; the seed-0 CB0.999, FL2 and OS2 runs also appear in the Stage 2 summaries |
+| 15 Stage 2 runs, validation and test summaries | 03 | `results/stage2/summary_valid/`, `results/stage2/summary_test/` (per-run values in `per_run.csv`) |
+| Figures 1–3 | — | `docs/figures/`, generated by `scripts/make_figures.py` from the 15 per-run `metrics.json` files (not stored in the repository; the same per-run values are in `per_run.csv`) |
+| Marginal-precision table (§6.2) | — | derived from the per-run Fear/Disgust TP and FP counts (their means, rounded to 0.1, are in `results/stage2/summary_test/fear_disgust.csv`) and the B0 mean F1 |
 
 ## References
 

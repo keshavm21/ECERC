@@ -10,7 +10,7 @@ A fork of the official PyTorch implementation of **ECERC** (Evidence-Cause Atten
 2. **Class imbalance on MELD (Limitation 2)**: class-balanced weights, focal exponent and Fear/Disgust oversampling. **This repo.**
 3. **Confidence-Aware Cause Gating (CACG)**: not in this repo.
 
-The Limitation 2 study is complete. It found **no test improvement** over the original objective, and that negative result is the outcome. The full write-up is `docs/report.md`. Paper reference numbers are MELD 66.46 wF1 / 67.32 Acc, averaged over 3 released checkpoints. Only `ECERC_MODEL.pkl` was evaluated here; this is "R0" (67.55 / 66.58 on a Colab T4).
+The Limitation 2 study is complete. It found **no test improvement** over the original objective, and that negative result is the outcome. The full write-up is `docs/report.md`. Paper reference numbers are MELD 66.46 wF1 / 67.32 Acc (paper Table 3; the upstream README calls them an average over 3 runs, and 3 checkpoints are released). Only `ECERC_MODEL.pkl` was evaluated here; this is "R0" (67.55 / 66.58 on a Colab T4).
 
 ## Repository layout
 
@@ -23,8 +23,8 @@ The Limitation 2 study is complete. It found **no test improvement** over the or
 | `MELD/train_imbalance.py` | Person B training and evaluation script. Variants: R0 `--eval_only`, B0 (no options), CB `--cb_beta`, FL `--gamma`, OS `--oversample --os_rho`. Adds macro-F1, per-class P/R/F1/TP/FP/FN, confusion matrices and saved predictions. |
 | `MELD/analyze_imbalance.py` | `compare` (epoch-by-epoch equality of two runs) and `summary --split valid\|test` (tables, paired Δ vs B0, confusion-matrix PNGs, pilot rule) |
 | `notebooks/01–03_*.ipynb` | Executed Colab notebooks: the execution evidence. Code cells and outputs are **never edited**; their structure and quirks are documented in `notebooks/README.md` |
-| `results/` | Curated saved outputs of every reported run (stage0, stage1, stage2): metrics.json, config.json, epochs.csv, logs, prediction CSVs and summaries. **No `best_model.pkl`** |
-| `scripts/make_figures.py` | Builds `docs/figures/*.png` from `results/stage2/runs/*/metrics.json` |
+| `results/` | Minimal evaluator set: R0 `metrics.json`/`config.json`, `orig_train_s0.log`, `baseline_sha256.txt`, the Stage 0 test `summary.md`, and the Stage 2 `summary_valid/` and `summary_test/` (summary.md, per_run, per_variant, paired_vs_B0, fear_disgust CSVs, confusion PNGs). **No per-run folders** (no metrics.json/epochs.csv/logs/preds/weights per run) and no Stage 1 files (never exported). Provenance and checks: `results/README.md`. The raw Drive export is in git-ignored `drive_export/`. |
+| `scripts/make_figures.py` | Builds `docs/figures/*.png` from `<dir>/stage2/runs/<run>/metrics.json`. Its default `--results results` no longer has run folders, so pass `--results` (see `docs/reproduce.md` §6) |
 | `IEMOCAP/`, other `MELD/` files, `requirement.yml`, `OS_info.txt` | Upstream, unchanged |
 
 ECE and reliability diagrams are **not** computed anywhere in this repo.
@@ -45,7 +45,7 @@ ECE and reliability diagrams are **not** computed anywhere in this repo.
 ## Environment and commands
 
 ```
-conda env create -f requirement.yml -n ecerc   # upstream env: Python 3.9, CUDA 11.4 / cuDNN 8.2 (authors: Windows 10 + A100)
+conda env create -f requirement.yml -n ecerc   # upstream env: Python 3.9.1, PyTorch 2.0.1 (cu118); OS_info.txt: Windows 10, A100, CUDA 11.4, cuDNN 8.2.4
 ```
 
 The reported Limitation 2 runs did **not** use this environment. They ran on Google Colab with a Tesla T4, Python 3.13.15, PyTorch 2.11.0+cu130, NumPy 2.1.3 and scikit-learn 1.6.1. In that environment the runs were deterministic across sessions.
@@ -59,14 +59,14 @@ cd MELD    && python inference.py --load_model_state_dir ECERC_MODEL.pkl
 cd MELD    && python train_imbalance.py --dry_run [variant options]   # checks only; works without a GPU
 cd MELD    && python train_imbalance.py --seed 0 [--cb_beta B | --gamma G | --oversample --os_rho R]
 cd MELD    && python analyze_imbalance.py summary --split test results/<run dirs>
-python scripts/make_figures.py             # from the repo root
+python scripts/make_figures.py --results <dir with stage2/runs/*/metrics.json>   # from the repo root
 ```
 
 Data is not in the repo. Download the preprocessed pickles (Google Drive link in `docs/upstream_README.md`) into `data/` at the repo root, which is `../data/` relative to each dataset folder. The dataloaders hard-code these paths and ignore `--data_dir`:
 - `../data/iemocap/IEMOCAP_features.pkl`, `iemocap_emotion_features_roberta.pkl`, `iemocap_emotion_semantic_features_roberta.pkl`
 - `../data/meld/meld_emotion_semantic_features_roberta.pkl`
 
-Pretrained checkpoints (`ECERC_MODEL.pkl`, plus `_2` and `_3` variants on HF `zt-ai/ECERC`) are state dicts loaded with `torch.load`. The paper's numbers are the average over the 3 checkpoints.
+Pretrained checkpoints (`ECERC_MODEL.pkl`, plus `_2` and `_3` variants on HF `zt-ai/ECERC`) are state dicts loaded with `torch.load`. The upstream README says the paper's numbers are an average over 3 runs.
 
 CLI flag spelling differs between datasets: IEMOCAP uses `--batch_size` and `--no_cuda`, MELD uses `--batch-size` and `--no-cuda`. `--class_weight` is `store_true` with `default=True` on IEMOCAP, so it cannot be turned off from the CLI. On MELD it defaults to False.
 

@@ -24,7 +24,7 @@ This repository is my part (**Person B**, Keshav Mishra) of a three-person cours
   - Fear recall rose from 22.67 to 36.67, but Fear precision fell from 31.27 to 16.13.
   - Only about 9% of the extra Fear predictions were correct. F1 rises only if more than ~13% are, so Fear F1 fell, and accuracy dropped 2 points.
 - **FL2 and OS2 stay within about 0.4 points of B0** on every overall metric.
-  - OS2's mean Disgust F1 is nominally higher than B0's (+0.22, 2 of 3 seeds). That gain is far smaller than the seed standard deviation, and OS2's overall metrics are slightly lower than B0's.
+  - OS2's mean Disgust F1 is nominally higher than B0's: +0.22 ± 0.36 points paired by seed, higher on 2 of 3 seeds. That gain is far smaller than the seed standard deviations (1.36 and 1.43), and OS2's overall metrics are slightly lower than B0's.
 - **FL2-OS2 has the lowest test macro-F1 (49.13).** It is below both FL2 and OS2 on accuracy, weighted F1, macro-F1 and Fear F1. Its Disgust F1 falls between the two.
 - **Small validation gains did not carry over to test.**
   - All four variants were slightly above B0 on validation weighted F1.
@@ -52,7 +52,7 @@ ECERC ([Zhang & Tan, ACL 2025](https://aclanthology.org/2025.acl-long.102/); [up
 3. Model four kinds of evidence-cause interaction with masked cross-attention (self-event, cross-event, self-contagion, cross-emotion).
 4. Classify the gated combination of these interactions.
 
-On MELD it reports 67.32% accuracy and 66.46 weighted F1, averaged over three released checkpoints.
+On MELD the paper reports 67.32% accuracy and 66.46 weighted F1 (its Table 3). The upstream README describes these as an average over 3 runs. The authors released three checkpoints.
 
 ## Limitation 2 and my contribution
 
@@ -71,7 +71,7 @@ My contribution:
 - **Baseline verification on MELD** (Stage 0).
   - Evaluated the released checkpoint (R0) in my environment.
   - Retrained the baseline (B0).
-  - Showed that my training script reproduces the upstream `train.py` exactly: all 40 epochs, all logged metrics.
+  - Showed that, in my environment, my training script reproduces the upstream `train.py` exactly: all 40 epochs, all logged metrics.
 - **A controlled study of four imbalance interventions:**
   - class-balanced loss weights;
   - a stronger focal exponent;
@@ -102,7 +102,12 @@ Everything else matches upstream `MELD/train.py`: architecture, features, optimi
 
 **About the test set.** Every run evaluates and logs the test set at every epoch, as upstream `train.py` does. **The test set was not used for any selection**: not for the checkpoint epoch, not for β or ρ, and not for which configurations to run.
 
-**Environment.** All runs used Google Colab with an NVIDIA Tesla T4, Python 3.13.15, PyTorch 2.11.0+cu130, NumPy 2.1.3 and scikit-learn 1.6.1. The upstream [`requirement.yml`](requirement.yml) specifies Python 3.9, CUDA 11.4 and an A100. In this environment, R0 scores 67.55 accuracy / 66.58 weighted F1 on test. R0 is a single released checkpoint, not a reproduction of the paper's three-checkpoint average.
+**Environment.** All runs used Google Colab with an NVIDIA Tesla T4, Python 3.13.15, PyTorch 2.11.0+cu130 (CUDA 13.0), NumPy 2.1.3 and scikit-learn 1.6.1. This differs from the authors' environment:
+
+- the upstream [`requirement.yml`](requirement.yml) pins Python 3.9.1, PyTorch 2.0.1 (CUDA 11.8 build), NumPy 1.25.0 and scikit-learn 1.3.2;
+- [`OS_info.txt`](OS_info.txt) records Windows 10, an NVIDIA A100 80GB, CUDA 11.4 and cuDNN 8.2.4.
+
+In my environment, R0 scores 67.55 accuracy / 66.58 weighted F1 on test. R0 is a single released checkpoint, not a reproduction of the paper's 3-run average.
 
 ## Repository layout
 
@@ -115,9 +120,9 @@ Everything else matches upstream `MELD/train.py`: architecture, features, optimi
 │   └── upstream_README.md       the original ECERC README, unchanged
 ├── notebooks/                   the executed Colab notebooks, kept unmodified as evidence
 │   └── README.md                which stage each notebook covers, and known quirks
-├── results/                     saved outputs of every reported run (metrics, logs, predictions, summaries)
+├── results/                     saved summaries of every reported stage (no per-run files)
 │   └── README.md                index of the saved artifacts
-├── scripts/make_figures.py      builds docs/figures/ from results/
+├── scripts/make_figures.py      builds docs/figures/ from the per-run metrics files
 ├── MELD/
 │   ├── train_imbalance.py       [mine] training/evaluation for R0, B0, CB, FL, OS, FL+OS
 │   ├── analyze_imbalance.py     [mine] equivalence check, summaries, confusion matrices, pilot rule
@@ -151,7 +156,7 @@ Each 40-epoch run takes about 1–2 minutes on a T4, plus data loading. The mode
 |---|---|
 | `IEMOCAP/` (all files) | `MELD/train_imbalance.py`, `MELD/analyze_imbalance.py` |
 | `MELD/model.py`, `dataloader.py`, `loss.py`, `train.py`, `inference.py` | `notebooks/` (executed experiment notebooks) |
-| `MELD/ECERC_MODEL.pkl`, `IEMOCAP/ECERC_MODEL.pkl` (released checkpoints) | `results/` (saved run outputs) |
+| `MELD/ECERC_MODEL.pkl`, `IEMOCAP/ECERC_MODEL.pkl` (released checkpoints) | `results/` (saved summaries) |
 | `requirement.yml`, `OS_info.txt`, `docs/upstream_README.md` | `docs/` (except `upstream_README.md`), `scripts/`, this README |
 
 **Proof that the upstream files are unchanged:**
@@ -163,7 +168,7 @@ The experiment scripts import the upstream model, dataset, loss and data loaders
 
 ## Acknowledgments and citation
 
-**AI assistance.** `MELD/train_imbalance.py`, `MELD/analyze_imbalance.py` and `scripts/make_figures.py` were developed with the assistance of Claude (Anthropic), an AI coding assistant. I ran all experiments on Google Colab, and every number reported here comes from the saved outputs of those runs, in `notebooks/` and `results/`.
+**AI assistance.** AI tools were used to assist with the development of the experimental scripts, result-analysis/figure-generation tooling, and project documentation. All experimental configurations, executions, results, and final scientific interpretations were reviewed and verified against the recorded experiment outputs.
 
 **Upstream.** The model, data pipeline, preprocessed features and released checkpoints are by the ECERC authors. Their README, including their license statement, is preserved in [`docs/upstream_README.md`](docs/upstream_README.md). If you use ECERC, please cite:
 

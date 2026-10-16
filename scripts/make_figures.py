@@ -1,11 +1,19 @@
 """Summary figures for the Stage 2 MELD class-imbalance experiment.
 
-Reads the 15 Stage 2 runs from results/stage2/runs/*/metrics.json (the unrounded metrics written by
-MELD/train_imbalance.py) and writes three PNGs to docs/figures/:
+Writes three PNGs to docs/figures/:
 
     fig1_test_overall.png          test accuracy, weighted F1 and macro-F1 per configuration (3 seeds each)
     fig2_minority_pr.png           test precision vs recall for Fear and Disgust, with iso-F1 curves
     fig3_valid_vs_test_delta.png   per-seed difference from B0 on validation and on test
+
+Two input layouts are accepted under --results (default: results):
+
+    stage2/summary_test/, stage2/summary_valid/   the committed analyze_imbalance.py summaries. Per-seed dots
+                                                  come from per_run.csv (2 decimals); every plotted mean is read
+                                                  from per_variant.csv, fear_disgust.csv and paired_vs_B0.csv,
+                                                  so the labels match the report tables exactly.
+    stage2/runs/<run>/metrics.json                the 15 per-run files written by MELD/train_imbalance.py
+                                                  (unrounded). Used when this folder exists.
 
     python scripts/make_figures.py                     # from the repository root
     python scripts/make_figures.py --results results --out docs/figures
@@ -13,6 +21,7 @@ MELD/train_imbalance.py) and writes three PNGs to docs/figures/:
 Only matplotlib is needed. No number is computed here that is not also in the summary tables.
 """
 import argparse
+import csv
 import glob
 import json
 import os
@@ -46,18 +55,45 @@ plt.rcParams.update({
 
 # ---------------------------------------------------------------- data
 
-def load_runs(results_dir):
-    """{(variant, seed): {'valid': {...}, 'test': {...}}} for the Stage 2 runs."""
+KEYS = ['acc', 'wf1', 'macro_f1'] + ['{}_{}'.format(c, k) for c in ('fea', 'dis') for k in ('precision', 'recall', 'f1')]
+# Column names used by MELD/analyze_imbalance.py summary.
+PER_RUN_COLUMNS = {'acc': 'Acc', 'wf1': 'wF1', 'macro_f1': 'macro-F1',
+                   'fea_precision': 'Fear P', 'fea_recall': 'Fear R', 'fea_f1': 'Fear F1',
+                   'dis_precision': 'Disgust P', 'dis_recall': 'Disgust R', 'dis_f1': 'Disgust F1'}
+PAIRED_COLUMNS = {'acc': 'ΔAcc', 'wf1': 'ΔwF1', 'macro_f1': 'Δmacro-F1', 'fea_f1': 'ΔFear F1', 'dis_f1': 'ΔDisgust F1'}
+
+
+def load_data(results_dir):
+    """(runs, means, paired):
+    runs[(variant, seed)][split][key] per-seed values;
+    means[(split, variant, key)] mean over seeds; paired[(split, variant, key)] mean per-seed difference from B0."""
+    if os.path.isdir(os.path.join(results_dir, 'stage2', 'runs')):
+        return load_run_files(results_dir)
+    return load_summaries(results_dir)
+
+
+def check_complete(runs, source):
+    missing = [(v, s) for v in VARIANTS for s in SEEDS if (v, s) not in runs]
+    if missing:
+        sys.exit('missing Stage 2 runs in {}: {}'.format(
+            source, ', '.join('{}_s{}'.format(v, s) for v, s in missing)))
+
+
+def load_run_files(results_dir):
     runs = {}
     for path in sorted(glob.glob(os.path.join(results_dir, 'stage2', 'runs', '*', 'metrics.json'))):
         with open(path) as f:
             m = json.load(f)
         if m.get('variant') in VARIANTS:
             runs[(m['variant'], m['seed'])] = {split: flatten(m[split]) for split in ('valid', 'test')}
-    missing = [(v, s) for v in VARIANTS for s in SEEDS if (v, s) not in runs]
-    if missing:
-        sys.exit('missing Stage 2 runs: {}'.format(', '.join('{}_s{}'.format(v, s) for v, s in missing)))
-    return runs
+    check_complete(runs, os.path.join(results_dir, 'stage2', 'runs'))
+    means, paired = {}, {}
+    for split in ('valid', 'test'):
+        for v in VARIANTS:
+            for key in KEYS:
+                means[(split, v, key)] = statistics.mean(values(runs, v, split, key))
+                paired[(split, v, key)] = statistics.mean(paired_deltas(runs, v, split, key))
+    return runs, means, paired
 
 
 def flatten(split_metrics):
@@ -67,6 +103,41 @@ def flatten(split_metrics):
         for k in ('precision', 'recall', 'f1'):
             out['{}_{}'.format(c, k)] = split_metrics['per_class'][c][k]
     return out
+
+
+def read_csv(path):
+    if not os.path.isfile(path):
+        sys.exit('missing {} (expected an analyze_imbalance.py summary folder)'.format(path))
+    with open(path, newline='', encoding='utf-8') as f:
+        return list(csv.DictReader(f))
+
+
+def leading_number(cell):
+    """'66.87 ± 0.65' -> 66.87; '-0.64 ± 0.59 (1/3 up)' -> -0.64."""
+    return float(cell.split()[0].replace('−', '-'))
+
+
+def load_summaries(results_dir):
+    runs, means, paired = {}, {}, {}
+    for split in ('valid', 'test'):
+        folder = os.path.join(results_dir, 'stage2', 'summary_' + split)
+        for row in read_csv(os.path.join(folder, 'per_run.csv')):
+            if row['variant'] in VARIANTS:
+                runs.setdefault((row['variant'], int(row['seed'])), {})[split] = {
+                    key: float(row[col]) for key, col in PER_RUN_COLUMNS.items()}
+        for row in read_csv(os.path.join(folder, 'per_variant.csv')):
+            for key, col in (('acc', 'Acc'), ('wf1', 'wF1'), ('macro_f1', 'macro-F1')):
+                means[(split, row['variant'], key)] = leading_number(row[col])
+        for row in read_csv(os.path.join(folder, 'fear_disgust.csv')):
+            for key, col in PER_RUN_COLUMNS.items():
+                if key.startswith(('fea_', 'dis_')):
+                    means[(split, row['variant'], key)] = leading_number(row[col])
+        for row in read_csv(os.path.join(folder, 'paired_vs_B0.csv')):
+            for key, col in PAIRED_COLUMNS.items():
+                paired[(split, row['variant'], key)] = leading_number(row[col])
+    runs = {k: r for k, r in runs.items() if len(r) == 2}
+    check_complete(runs, os.path.join(results_dir, 'stage2', 'summary_{valid,test}', 'per_run.csv'))
+    return runs, means, paired
 
 
 def values(runs, variant, split, key):
@@ -97,17 +168,17 @@ def dot(ax, x, y, color, size=34, **kw):
 
 # ---------------------------------------------------------------- figure 1
 
-def fig_overall(runs, path):
+def fig_overall(runs, means, paired, path):
     metrics = [('acc', 'Accuracy'), ('wf1', 'Weighted F1'), ('macro_f1', 'Macro-F1')]
     fig, axes = plt.subplots(1, 3, figsize=(10, 3.6))
     for ax, (key, label) in zip(axes, metrics):
-        b0_mean = statistics.mean(values(runs, 'B0', 'test', key))
+        b0_mean = means[('test', 'B0', key)]
         ax.axhline(b0_mean, color=INK_MUTED, linewidth=1, zorder=1)
         ax.text(len(VARIANTS) - 0.45, b0_mean, 'B0 mean', ha='right', va='bottom', fontsize=7, color=INK_MUTED)
         for i, v in enumerate(VARIANTS):
             ys = values(runs, v, 'test', key)
             dot(ax, [i] * len(ys), ys, SERIES_1)
-            mean = statistics.mean(ys)
+            mean = means[('test', v, key)]
             ax.plot([i - 0.22, i + 0.22], [mean, mean], color=INK, linewidth=2, solid_capstyle='round', zorder=4)
             ax.text(i + 0.27, mean, '{:.2f}'.format(mean), va='center', fontsize=7, color=INK_SECONDARY)
         ax.set_xticks(range(len(VARIANTS)))
@@ -128,7 +199,7 @@ def fig_overall(runs, path):
 # Label placement (offset points) where two configurations' means sit close together.
 LABEL_OFFSETS = {('dis', 'FL2'): (-6, -11, 'right'), ('dis', 'FL2-OS2'): (-6, -11, 'right')}
 
-def fig_minority_pr(runs, path):
+def fig_minority_pr(runs, means, paired, path):
     colors = {'B0': SERIES_1, 'CB0.999': SERIES_2}
     fig, axes = plt.subplots(1, 2, figsize=(9, 4.4))
     for ax, (cls, name, support) in zip(axes, [('fea', 'Fear', 50), ('dis', 'Disgust', 68)]):
@@ -153,7 +224,7 @@ def fig_minority_pr(runs, path):
             color = colors.get(v, INK_MUTED)
             rs, ps = pts[v]
             ax.scatter(rs, ps, s=14, color=color, alpha=0.45, linewidths=0, zorder=2)
-            mr, mp = statistics.mean(rs), statistics.mean(ps)
+            mr, mp = means[('test', v, cls + '_recall')], means[('test', v, cls + '_precision')]
             dot(ax, mr, mp, color, size=60 if v in colors else 40)
             dx, dy, ha = LABEL_OFFSETS.get((cls, v), (6, 4, 'left'))
             ax.annotate(v, (mr, mp), xytext=(dx, dy), textcoords='offset points', fontsize=7.5, ha=ha,
@@ -180,7 +251,7 @@ def fig_minority_pr(runs, path):
 
 # ---------------------------------------------------------------- figure 3
 
-def fig_valid_vs_test(runs, path):
+def fig_valid_vs_test(runs, means, paired, path):
     variants = VARIANTS[1:]
     metrics = [('wf1', 'Δ weighted F1 vs B0 (points)'), ('macro_f1', 'Δ macro-F1 vs B0 (points)')]
     splits = [('valid', 'Validation', SERIES_1, -0.14), ('test', 'Test', SERIES_2, 0.14)]
@@ -192,7 +263,7 @@ def fig_valid_vs_test(runs, path):
                 ds = paired_deltas(runs, v, split, key)
                 y = row + offset
                 ax.scatter(ds, [y] * len(ds), s=14, color=color, alpha=0.45, linewidths=0, zorder=2)
-                mean = statistics.mean(ds)
+                mean = paired[(split, v, key)]
                 dot(ax, mean, y, color, size=50)
                 ax.text(mean, y - 0.13 if offset < 0 else y + 0.13, '{:+.2f}'.format(mean), fontsize=6.5,
                         color=INK_SECONDARY, ha='center', va='bottom' if offset < 0 else 'top')
@@ -217,11 +288,11 @@ def main():
     parser.add_argument('--results', default='results', help='curated results folder (default: results)')
     parser.add_argument('--out', default=os.path.join('docs', 'figures'), help='output folder')
     args = parser.parse_args()
-    runs = load_runs(args.results)
+    runs, means, paired = load_data(args.results)
     os.makedirs(args.out, exist_ok=True)
     for name, fn in [('fig1_test_overall.png', fig_overall), ('fig2_minority_pr.png', fig_minority_pr),
                      ('fig3_valid_vs_test_delta.png', fig_valid_vs_test)]:
-        fn(runs, os.path.join(args.out, name))
+        fn(runs, means, paired, os.path.join(args.out, name))
         print('wrote', os.path.join(args.out, name))
 
 

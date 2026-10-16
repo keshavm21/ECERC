@@ -18,7 +18,12 @@ These steps re-run every result in [`report.md`](report.md). They follow what th
 | NumPy | 2.1.3 |
 | scikit-learn | 1.6.1 |
 
-This environment differs from the upstream [`requirement.yml`](../requirement.yml) (Python 3.9, CUDA 11.4 / cuDNN 8.2, A100). That upstream environment was not used in this work.
+This environment differs from the authors' environment:
+
+- the upstream [`requirement.yml`](../requirement.yml) pins Python 3.9.1, PyTorch 2.0.1 (CUDA 11.8 build), NumPy 1.25.0 and scikit-learn 1.3.2;
+- [`OS_info.txt`](../OS_info.txt) records Windows 10, an NVIDIA A100 80GB, CUDA 11.4 and cuDNN 8.2.4.
+
+That upstream environment was not used in this work.
 
 **About determinism:**
 
@@ -138,11 +143,12 @@ python analyze_imbalance.py summary --split test  $RUNS --out results/stage2_sum
 
 ## 6. Figures
 
-From the repository root:
+[`scripts/make_figures.py`](../scripts/make_figures.py) reads the 15 per-run `metrics.json` files from a folder laid out as `<dir>/stage2/runs/<run>/metrics.json`. The repository's [`../results/`](../results/) keeps only summaries, not per-run files, so first collect your Stage 2 runs into that layout. From the repository root, after step 5:
 
 ```bash
-python scripts/make_figures.py                              # reads results/stage2/runs/*/metrics.json
-python scripts/make_figures.py --results <dir> --out <dir>  # use your own runs
+mkdir -p figdata/stage2/runs
+cp -R MELD/results/{B0,CB0.999,FL2,OS2,FL2-OS2}_s{0,1,2} figdata/stage2/runs/
+python scripts/make_figures.py --results figdata --out docs/figures
 ```
 
-`--results` must point to a folder with the layout `stage2/runs/<run>/metrics.json`.
+Only matplotlib is needed. The per-run values the figures plot are listed, rounded to 2 decimals, in `results/stage2/summary_*/per_run.csv`.

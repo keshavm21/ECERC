@@ -1,0 +1,66 @@
+{
+  "variant": "R0",
+  "seed": null,
+  "mode": "eval_only",
+  "checkpoint": "ECERC_MODEL.pkl",
+  "checkpoint_sha256": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c",
+  "data": {
+    "train": {
+      "dialogues": 1038,
+      "utterances": 9989,
+      "label_counts": [
+        4710,
+        1205,
+        268,
+        683,
+        1743,
+        271,
+        1109
+      ]
+    },
+    "valid": {
+      "dialogues": 114,
+      "utterances": 1109,
+      "label_counts": [
+        470,
+        150,
+        40,
+        111,
+        163,
+        22,
+        153
+      ]
+    },
+    "test": {
+      "dialogues": 280,
+      "utterances": 2610,
+      "label_counts": [
+        1256,
+        281,
+        50,
+        208,
+        402,
+        68,
+        345
+      ]
+    }
+  },
+  "environment": {
+    "python": "3.13.15",
+    "torch": "2.11.0+cu130",
+    "cuda": "13.0",
+    "cudnn": 92700,
+    "gpu": "Tesla T4",
+    "numpy": "2.1.3",
+    "sklearn": "1.6.1",
+    "git_commit": "339fcaa68262f3fc64d860ebe6c6f79696e25818",
+    "baseline_sha256": {
+      "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32",
+      "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+      "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+      "train.py": "83117a9f2003da23ff84f826a5a7a89c19a3911b48bcf9b3ebab554647f88936",
+      "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f"
+    },
+    "command": "train_imbalance.py --eval_only --load_model_state_dir ECERC_MODEL.pkl"
+  }
+}
