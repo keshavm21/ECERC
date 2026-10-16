@@ -1,0 +1,81 @@
+{
+  "llm_model": "Qwen/Qwen2.5-7B-Instruct",
+  "llm_quantize": true,
+  "llm_seeds": [
+    1,
+    2
+  ],
+  "llm_epochs": 1,
+  "llm_lr": 0.0001,
+  "llm_micro_batch": 8,
+  "llm_grad_accum": 2,
+  "llm_warmup": 0.05,
+  "llm_eval_every": 0.34,
+  "llm_patience": 2,
+  "llm_eval_batch": 16,
+  "llm_max_len": 256,
+  "llm_max_minutes": 420,
+  "llm_lora_r": 16,
+  "llm_lora_alpha": 32,
+  "llm_lora_dropout": 0.05,
+  "llm_lora_targets": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "llm_min_dev_mf1": 35.0,
+  "gate_min_gain": 0.5,
+  "n_folds": 5,
+  "instruction": "Task: identify the emotion that the target speaker expresses in the last utterance of this conversation from a TV show. Answer with one of: neutral, surprise, fear, sadness, joy, disgust, anger.\n\nConversation:\n",
+  "fusion": "score = (1 - w) log p_ECERC + w log p_LLM",
+  "w_grid": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.0
+  ],
+  "selection": "highest mean dev macro-F1 over pairs; ties to the smaller w",
+  "gate": "cross-fitted dev gain >= 0.5",
+  "criteria": {
+    "primary": "mean over (ECERC checkpoint x expert seed) pairs of test macro-F1(fused) - macro-F1(ECERC alone)",
+    "success": [
+      "delta >= +1.0",
+      "procedure-level 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of pairs",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  },
+  "multiplicity": "test look 3 of 3; Bonferroni-adjusted 98.33% CI also reported"
+}

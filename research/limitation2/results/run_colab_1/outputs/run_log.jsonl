@@ -1,0 +1,8 @@
+{"time": "2026-10-11 10:18:42", "stage": "setup", "device": "cuda", "gpu": "Tesla T4", "torch": "2.11.0+cu130"}
+{"time": "2026-10-11 10:19:12", "stage": "downloads verified", "data_MB": 485.7, "data_sha256": "a0349614b2b58e8b"}
+{"time": "2026-10-11 10:19:13", "stage": "data loaded", "seconds": 0.9, "dialogues": {"train": 1038, "valid": 114, "test": 280}}
+{"time": "2026-10-11 10:19:20", "stage": "fidelity checks passed", "dev_acc": [67.0, 66.64, 66.64]}
+{"time": "2026-10-11 10:20:23", "stage": "dev analysis done", "tau_star": 0.1, "delta_star": 0.45, "forecast": 0.16, "mde80": 0.91}
+{"time": "2026-10-11 10:20:23", "stage": "FREEZE", "frozen_config_sha256": "49a6baf484b677f7", "tau_star": 0.1}
+{"time": "2026-10-11 10:20:23", "stage": "TEST evaluation starts (test dialogues are run and test labels read only from here on)", "rerun": false}
+{"time": "2026-10-11 10:20:35", "stage": "TEST done", "verdict": "FAILURE (no detectable effect; the +1.0 target is excluded)", "delta": -0.24, "ci": [-1.06, 0.68]}

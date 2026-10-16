@@ -1,0 +1,54 @@
+{
+  "description": "Hashes and sources for research/limitation2. Regenerate with tools/build_notebook.py.",
+  "original_files": {
+    "MELD/model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32",
+    "MELD/dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+    "MELD/inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+    "MELD/loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246"
+  },
+  "verbatim_copies": {
+    "ecerc_original/model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32",
+    "ecerc_original/dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+    "ecerc_original/inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+    "ecerc_original/loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246"
+  },
+  "analysis_library": {
+    "src/l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+    "src/l2_feature_leak.py": "a4dfa08870004beb9ef11d2ee1498ff71c42181f9c0da69ee66129265bf60406",
+    "src/l2_pathb.py": "74e6ec8a9755ab8bd58fbc1586521f0ee7a4708c222632d7b90cbc0f6842e63e",
+    "src/l2_expert.py": "ec165da1ab04aae4348588813d0a7c15cf0ccb06a8834ef6e9d78350f824663a",
+    "src/l2_llm.py": "3c969349a8f6bd2745845f184d5c9fde40a06d25a6c65694faf69cd74ce1d7cf",
+    "src/l2_llm_worker.py": "154187d9700acdf300f8ea33398f229306621ef446502393d199a0b6c7169635"
+  },
+  "notebook": {
+    "notebooks/ECERC_L2_posthoc_LA.ipynb": "98f812e39b8a254b3f081b6666b049cd280f1465a164522f1b8e481334332003",
+    "notebooks/ECERC_L2_feature_leak_check.ipynb": "1dc1abb5d43bab8435be07ad44bfb80c5bc558de77d86c6d99524f121324e46d",
+    "notebooks/ECERC_L2_pathB_representation.ipynb": "3bb348dc3155115239effebf3f65f2d187a62eb8a72c3079df63324e92ab5504",
+    "notebooks/ECERC_L2_expert_fusion.ipynb": "e5e83e38cb924e6016cba88e9f026bf64b7a29c740a67b60c21bc304dbd22cf6",
+    "notebooks/ECERC_L2_llm_fusion.ipynb": "75d85e0b422b3b223f701ec5524e2ff25846b90096a89fb867f2c316d08eb430"
+  },
+  "checkpoints": {
+    "C1": {
+      "url": "https://huggingface.co/zt-ai/ECERC/resolve/main/MELD/ECERC_MODEL.pkl",
+      "sha256": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c"
+    },
+    "C2": {
+      "url": "https://huggingface.co/zt-ai/ECERC/resolve/main/MELD/ECERC_MODEL_2.pkl",
+      "sha256": "47472e9ed138934737d3516be3bd630a16edad14971fe29ce5002e1d7bbdf28c"
+    },
+    "C3": {
+      "url": "https://huggingface.co/zt-ai/ECERC/resolve/main/MELD/ECERC_MODEL_3.pkl",
+      "sha256": "d5104e06fb050410e0720b9de4310474339cd2494eb98e2f57f9df89a609bf5c"
+    }
+  },
+  "in_repo_checkpoint": {
+    "MELD/ECERC_MODEL.pkl": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c"
+  },
+  "data": {
+    "file": "meld_emotion_semantic_features_roberta.pkl",
+    "google_drive_file_id": "1IQokygWgjaZuSXvCsfIcUzj1Gu69hDCb",
+    "source": "ECERC README -> Drive folder 1DGoPEBvMgMOge7u20wjKn6slYe4awyQi -> meld/",
+    "sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80",
+    "sha256_note": "observed in run_colab_1; no checksum is published"
+  }
+}

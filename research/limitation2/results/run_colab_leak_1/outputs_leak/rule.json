@@ -1,0 +1,17 @@
+{
+  "rule": "LEAK CONFIRMED if gap(eroberta1) >= 15 macro-F1 points and gap(eroberta1) - gap(sroberta1) >= 10 with a 95% bootstrap CI lower bound > 0; otherwise NOT CONFIRMED. gap = macro-F1 on held-out training dialogues (out-of-fold) minus the mean dev macro-F1 of the same fold models.",
+  "primary": "eroberta1",
+  "control": "sroberta1",
+  "features": {
+    "eroberta1": "text emotion features: RoBERTa-large fine-tuned on MELD training labels (ECERC evidence input)",
+    "sroberta1": "text semantic features: RoBERTa-large, not fine-tuned (ECERC event input); control",
+    "videoAudio": "acoustic features (descriptive)",
+    "videoVisual": "visual features (descriptive)"
+  },
+  "n_folds": 5,
+  "fold_seed": 2026,
+  "C": 1.0,
+  "max_iter": 1000,
+  "bootstrap_B": 2000,
+  "boot_seed": 777
+}

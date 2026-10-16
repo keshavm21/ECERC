@@ -1,0 +1,189 @@
+{
+  "created": "2026-10-11 10:20:23",
+  "note": "Written before any test-set access. stage_test reads every decision rule from this file.",
+  "code_sha256": {
+    "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+    "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+    "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+    "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+    "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+  },
+  "data_sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80",
+  "data_bytes": 509327864,
+  "checkpoints": [
+    {
+      "name": "C1",
+      "sha256": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c",
+      "archive": "ererc0_meld_valf1",
+      "flagged_test_selection": false
+    },
+    {
+      "name": "C2",
+      "sha256": "47472e9ed138934737d3516be3bd630a16edad14971fe29ce5002e1d7bbdf28c",
+      "archive": "ererc2613_meld_valf1",
+      "flagged_test_selection": false
+    },
+    {
+      "name": "C3",
+      "sha256": "d5104e06fb050410e0720b9de4310474339cd2494eb98e2f57f9df89a609bf5c",
+      "archive": "ererc659_meld_valloss",
+      "flagged_test_selection": false
+    }
+  ],
+  "include": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "train_counts": [
+    4710,
+    1205,
+    268,
+    683,
+    1743,
+    271,
+    1109
+  ],
+  "prior_train": [
+    0.47151867053759133,
+    0.12063269596556211,
+    0.02682951246371008,
+    0.06837521273400742,
+    0.17449194113524877,
+    0.02712984282710982,
+    0.11102212433677044
+  ],
+  "log_prior_train": [
+    -0.7517965795216863,
+    -2.115004920607394,
+    -3.618252786021293,
+    -2.6827449069613594,
+    -1.7458767210121289,
+    -3.607120945652449,
+    -2.1980257791817825
+  ],
+  "tau_grid": [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0,
+    1.1,
+    1.2,
+    1.3,
+    1.4,
+    1.5,
+    1.6,
+    1.7,
+    1.8,
+    1.9,
+    2.0
+  ],
+  "delta_grid": [
+    0.0,
+    0.15,
+    0.3,
+    0.45,
+    0.6,
+    0.75,
+    0.9,
+    1.05,
+    1.2,
+    1.35,
+    1.5,
+    1.65,
+    1.8,
+    1.95,
+    2.1,
+    2.25,
+    2.4,
+    2.55,
+    2.7,
+    2.85,
+    3.0
+  ],
+  "selection_rule": "highest mean dev macro-F1 over included checkpoints; ties go to the smaller value",
+  "tau_star": 0.1,
+  "delta_star": 0.45,
+  "tau_per_checkpoint": {
+    "C1": 0.1,
+    "C2": 0.2,
+    "C3": 0.1
+  },
+  "tau_prior_matched": 0.1,
+  "la1_tau": 1.0,
+  "temperature_dev": {
+    "C1": 0.87,
+    "C2": 0.85,
+    "C3": 0.89
+  },
+  "forecast": {
+    "fold_tau": [
+      0.2,
+      0.2,
+      0.2,
+      0.1,
+      0.1
+    ],
+    "crossfit_delta_macro_f1": 0.15698596858692754,
+    "dev_bootstrap_ci95": [
+      -0.8116578947047094,
+      1.1986416949761654
+    ],
+    "se_dev": 0.5110451063509033,
+    "se_test_projected": 0.3260863682845033,
+    "mde80_projected": 0.9130418311966092,
+    "note": "projected test SE = dev SE * sqrt(dev dialogues / test dialogues); MDE80 = 2.8 * SE"
+  },
+  "bootstrap": {
+    "B": 10000,
+    "seed": 20251010,
+    "unit": "dialogue",
+    "design": "dev and test resampled independently; tau and delta re-selected in every replicate"
+  },
+  "criteria": {
+    "primary": "mean over included checkpoints of test macro-F1(LA*) - macro-F1(BASE), in points",
+    "success": [
+      "delta >= +1.0",
+      "procedure-level 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0",
+      "delta > 0 for every included checkpoint"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  },
+  "device": "cuda",
+  "env": {
+    "python": "3.13.15",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu130",
+    "numpy": "2.1.3",
+    "pandas": "2.2.3",
+    "sklearn": "1.6.1",
+    "device": "cuda",
+    "gpu": "Tesla T4",
+    "cpu_cuda_shim": false,
+    "code_sha256": {
+      "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+      "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+      "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+      "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+      "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+    }
+  }
+}

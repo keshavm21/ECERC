@@ -1,0 +1,6 @@
+{"time": "2026-10-11 10:47:25", "stage": "setup", "cpus": 2, "sklearn": "1.6.1"}
+{"time": "2026-10-11 10:47:35", "stage": "data ready", "MB": 485.7, "sha256": "a0349614b2b58e8b"}
+{"time": "2026-10-11 10:47:36", "stage": "train/dev features loaded (test split not read)", "seconds": 1.2, "utterances": {"train": 9989, "valid": 1109}, "dims": {"eroberta1": 1024, "sroberta1": 1024, "videoAudio": 300, "videoVisual": 342}}
+{"time": "2026-10-11 10:54:22", "stage": "probes fitted", "seconds": 406.1, "hit_max_iter": ["sroberta1"]}
+{"time": "2026-10-11 10:54:32", "stage": "nearest-neighbour check done", "seconds": 9.9}
+{"time": "2026-10-11 10:54:33", "stage": "decision", "verdict": "NOT CONFIRMED", "gap_primary": 7.6, "gap_control": 0.0, "difference": 7.6}

@@ -1,0 +1,14 @@
+{"time": "2026-10-11 18:48:29", "stage": "setup", "device": "cuda", "gpu": "Tesla T4", "torch": "2.11.0+cu128"}
+{"time": "2026-10-11 18:48:38", "stage": "data ready", "MB": 485.7, "sha256": "a0349614b2b58e8b"}
+{"time": "2026-10-11 18:48:39", "stage": "data loaded", "seconds": 0.7, "dialogues": {"train": 1038, "valid": 114, "test": 280}}
+{"time": "2026-10-11 18:48:40", "stage": "datasets ready", "sentiment_classes": 3}
+{"time": "2026-10-11 18:53:08", "stage": "stage 1 candidate done", "candidate": "C0_original", "mean_dev_macro_f1": 54.12}
+{"time": "2026-10-11 18:57:35", "stage": "stage 1 candidate done", "candidate": "C1_mean4_layers", "mean_dev_macro_f1": 54.05}
+{"time": "2026-10-11 19:02:44", "stage": "stage 1 candidate done", "candidate": "C2_contrast_0.1", "mean_dev_macro_f1": 53.91}
+{"time": "2026-10-11 19:07:54", "stage": "stage 1 candidate done", "candidate": "C2_contrast_0.3", "mean_dev_macro_f1": 53.78}
+{"time": "2026-10-11 19:13:02", "stage": "stage 1 candidate done", "candidate": "C2_contrast_1.0", "mean_dev_macro_f1": 53.07}
+{"time": "2026-10-11 19:17:47", "stage": "stage 1 candidate done", "candidate": "C3_sentiment_0.3", "mean_dev_macro_f1": 54.31}
+{"time": "2026-10-11 19:22:29", "stage": "stage 1 candidate done", "candidate": "C3_sentiment_1.0", "mean_dev_macro_f1": 53.24}
+{"time": "2026-10-11 19:26:54", "stage": "stage 1 candidate done", "candidate": "C4_lr_3e-5", "mean_dev_macro_f1": 54.06}
+{"time": "2026-10-11 19:26:54", "stage": "stage 1 done", "minutes": 38.2, "winner": "C3_sentiment_0.3", "gain": 0.19, "proceed": false}
+{"time": "2026-10-11 19:26:54", "stage": "FREEZE", "sha256": "09c63fd4a989061f", "winner": "C3_sentiment_0.3", "proceed": false}

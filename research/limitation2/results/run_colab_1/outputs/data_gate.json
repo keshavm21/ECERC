@@ -1,0 +1,50 @@
+{
+  "data_sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80",
+  "data_bytes": 509327864,
+  "n_utterances": {
+    "train": 9989,
+    "valid": 1109,
+    "test": 2610
+  },
+  "n_dialogues": {
+    "train": 1038,
+    "valid": 114,
+    "test": 280
+  },
+  "feature_dims": {
+    "eroberta1": 1024,
+    "sroberta1": 1024,
+    "videoVisual": 342,
+    "videoAudio": 300,
+    "speakers": 9
+  },
+  "modality_note": "MELD/dataloader.py returns (videoVisual, videoAudio) and MELD/inference.py concatenates them as [text, audio, vision], i.e. [text, videoVisual, videoAudio]. Kept unchanged because the released weights were trained this way.",
+  "train_counts": [
+    4710,
+    1205,
+    268,
+    683,
+    1743,
+    271,
+    1109
+  ],
+  "prior_train": [
+    0.47151867053759133,
+    0.12063269596556211,
+    0.02682951246371008,
+    0.06837521273400742,
+    0.17449194113524877,
+    0.02712984282710982,
+    0.11102212433677044
+  ],
+  "dev_counts": [
+    470,
+    150,
+    40,
+    111,
+    163,
+    22,
+    153
+  ],
+  "load_seconds": 0.9
+}

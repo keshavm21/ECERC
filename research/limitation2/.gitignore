@@ -1,0 +1,9 @@
+# local test environment and synthetic smoke-test data
+.venv/
+tests/_smoke/
+__pycache__/
+*.pyc
+tests/_smoke_leak/
+tests/_smoke_pathb/
+tests/_smoke_expert/
+tests/_smoke_llm/

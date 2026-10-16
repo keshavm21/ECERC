@@ -1,0 +1,29 @@
+[
+  {
+    "name": "C1",
+    "archive": "ererc0_meld_valf1",
+    "dev_acc": 66.99729486023445,
+    "original_dev_acc": 67.0,
+    "original_dev_weighted_f1": 65.88,
+    "determinism_max_diff": 0.0,
+    "confusion_diff": 0
+  },
+  {
+    "name": "C2",
+    "archive": "ererc2613_meld_valf1",
+    "dev_acc": 66.63660955816052,
+    "original_dev_acc": 66.64,
+    "original_dev_weighted_f1": 65.56,
+    "determinism_max_diff": 0.0,
+    "confusion_diff": 0
+  },
+  {
+    "name": "C3",
+    "archive": "ererc659_meld_valloss",
+    "dev_acc": 66.63660955816052,
+    "original_dev_acc": 66.64,
+    "original_dev_weighted_f1": 65.4,
+    "determinism_max_diff": 0.0,
+    "confusion_diff": 0
+  }
+]

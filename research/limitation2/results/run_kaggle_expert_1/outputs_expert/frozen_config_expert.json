@@ -1,0 +1,153 @@
+{
+  "created": "2026-10-11 22:37:17",
+  "note": "Written before any test-set access. The test evaluation reads its rules from this file.",
+  "code_sha256": {
+    "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+    "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+    "l2_expert.py": "ec165da1ab04aae4348588813d0a7c15cf0ccb06a8834ef6e9d78350f824663a",
+    "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+    "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+    "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+  },
+  "data_sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80",
+  "ecerc_checkpoints": [
+    {
+      "name": "C1",
+      "sha256": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c",
+      "archive": "ererc0_meld_valf1"
+    },
+    {
+      "name": "C2",
+      "sha256": "47472e9ed138934737d3516be3bd630a16edad14971fe29ce5002e1d7bbdf28c",
+      "archive": "ererc2613_meld_valf1"
+    },
+    {
+      "name": "C3",
+      "sha256": "d5104e06fb050410e0720b9de4310474339cd2494eb98e2f57f9df89a609bf5c",
+      "archive": "ererc659_meld_valloss"
+    }
+  ],
+  "experts": [
+    {
+      "seed": 1,
+      "best_epoch": 3,
+      "dev_macro_f1": 54.36373064276723
+    },
+    {
+      "seed": 2,
+      "best_epoch": 4,
+      "dev_macro_f1": 55.968533689505385
+    },
+    {
+      "seed": 3,
+      "best_epoch": 3,
+      "dev_macro_f1": 54.94716877292232
+    }
+  ],
+  "expert_model": "FacebookAI/roberta-large",
+  "w_grid": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.0
+  ],
+  "w_star": 0.5,
+  "secondary_w_tau": {
+    "w": 0.2,
+    "tau": 0.1
+  },
+  "log_prior_train": [
+    -0.7517965795216863,
+    -2.115004920607394,
+    -3.618252786021293,
+    -2.6827449069613594,
+    -1.7458767210121289,
+    -3.607120945652449,
+    -2.1980257791817825
+  ],
+  "gate": {
+    "statistic": "cross-fitted dev gain",
+    "value": 0.9680982217321598,
+    "threshold": 0.5,
+    "proceed": true
+  },
+  "forecast": {
+    "fold_w": [
+      0.5,
+      0.6,
+      0.15,
+      0.6,
+      0.25
+    ],
+    "crossfit_delta_macro_f1": 0.9680982217321598,
+    "dev_bootstrap_ci95": [
+      -1.8696745997899706,
+      3.9257885963330352
+    ],
+    "se_test_projected": 0.9141628356913398,
+    "mde80_projected": 2.5596559399357512
+  },
+  "bootstrap": {
+    "B": 10000,
+    "seed": 20261012,
+    "unit": "dialogue",
+    "design": "dev and test resampled independently; w re-selected in every replicate"
+  },
+  "criteria": {
+    "primary": "mean over (ECERC checkpoint x expert seed) pairs of test macro-F1(fused) - macro-F1(ECERC alone)",
+    "success": [
+      "delta >= +1.0",
+      "procedure-level 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of pairs",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  },
+  "device": "cuda",
+  "env": {
+    "python": "3.13.15",
+    "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1",
+    "numpy": "2.1.3",
+    "pandas": "2.3.3",
+    "sklearn": "1.6.1",
+    "device": "cuda",
+    "gpu": "Tesla T4",
+    "code_sha256": {
+      "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+      "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+      "l2_expert.py": "ec165da1ab04aae4348588813d0a7c15cf0ccb06a8834ef6e9d78350f824663a",
+      "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+      "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+      "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+    }
+  }
+}

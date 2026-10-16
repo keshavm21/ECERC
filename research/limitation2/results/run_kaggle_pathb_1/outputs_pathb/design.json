@@ -1,0 +1,125 @@
+{
+  "candidates": [
+    {
+      "name": "C0_original",
+      "family": "C0",
+      "features": "layer1",
+      "lr": 1e-05,
+      "lam_c": 0.0,
+      "lam_s": 0.0
+    },
+    {
+      "name": "C1_mean4_layers",
+      "family": "C1",
+      "features": "mean4",
+      "lr": 1e-05,
+      "lam_c": 0.0,
+      "lam_s": 0.0
+    },
+    {
+      "name": "C2_contrast_0.1",
+      "family": "C2",
+      "features": "layer1",
+      "lr": 1e-05,
+      "lam_c": 0.1,
+      "lam_s": 0.0
+    },
+    {
+      "name": "C2_contrast_0.3",
+      "family": "C2",
+      "features": "layer1",
+      "lr": 1e-05,
+      "lam_c": 0.3,
+      "lam_s": 0.0
+    },
+    {
+      "name": "C2_contrast_1.0",
+      "family": "C2",
+      "features": "layer1",
+      "lr": 1e-05,
+      "lam_c": 1.0,
+      "lam_s": 0.0
+    },
+    {
+      "name": "C3_sentiment_0.3",
+      "family": "C3",
+      "features": "layer1",
+      "lr": 1e-05,
+      "lam_c": 0.0,
+      "lam_s": 0.3
+    },
+    {
+      "name": "C3_sentiment_1.0",
+      "family": "C3",
+      "features": "layer1",
+      "lr": 1e-05,
+      "lam_c": 0.0,
+      "lam_s": 1.0
+    },
+    {
+      "name": "C4_lr_3e-5",
+      "family": "C4",
+      "features": "layer1",
+      "lr": 3e-05,
+      "lam_c": 0.0,
+      "lam_s": 0.0
+    }
+  ],
+  "confusable_pairs": [
+    [
+      "fea",
+      "sad"
+    ],
+    [
+      "fea",
+      "ang"
+    ],
+    [
+      "fea",
+      "sur"
+    ],
+    [
+      "dis",
+      "ang"
+    ]
+  ],
+  "epochs": 40,
+  "stage1_seeds": [
+    101,
+    102,
+    103
+  ],
+  "stage2_seeds": [
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210
+  ],
+  "gate_min_gain": 0.5,
+  "criteria": {
+    "primary": "mean over stage-2 seeds of test macro-F1(winner) - macro-F1(C0), paired by seed, in points",
+    "success": [
+      "delta >= +1.0",
+      "hierarchical-bootstrap 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of seeds",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  }
+}

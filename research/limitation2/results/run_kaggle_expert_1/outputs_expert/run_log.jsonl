@@ -1,0 +1,12 @@
+{"time": "2026-10-11 20:21:25", "stage": "setup", "device": "cuda", "gpu": "Tesla T4", "torch": "2.11.0+cu128", "transformers": "5.16.1"}
+{"time": "2026-10-11 20:21:44", "stage": "downloads verified", "data_MB": 485.7, "data_sha256": "a0349614b2b58e8b"}
+{"time": "2026-10-11 20:21:45", "stage": "data loaded", "seconds": 0.7, "dialogues": {"train": 1038, "valid": 114, "test": 280}}
+{"time": "2026-10-11 20:21:47", "stage": "inputs ready", "train": 9989, "dev": 1109}
+{"time": "2026-10-11 21:07:09", "stage": "expert trained", "seed": 1, "best_epoch": 3, "dev_macro_f1": 54.36, "minutes": 45.2, "retry": false}
+{"time": "2026-10-11 21:52:15", "stage": "expert trained", "seed": 2, "best_epoch": 4, "dev_macro_f1": 55.97, "minutes": 45.1, "retry": false}
+{"time": "2026-10-11 22:37:17", "stage": "expert trained", "seed": 3, "best_epoch": 3, "dev_macro_f1": 54.95, "minutes": 45.0, "retry": false}
+{"time": "2026-10-11 22:37:17", "stage": "experts done", "minutes": 135.4}
+{"time": "2026-10-11 22:37:17", "stage": "dev analysis done", "w_star": 0.5, "forecast": 0.97, "proceed": true}
+{"time": "2026-10-11 22:37:17", "stage": "FREEZE", "sha256": "ff25992b06cb811e", "w_star": 0.5, "proceed": true}
+{"time": "2026-10-11 22:37:17", "stage": "TEST evaluation starts (test dialogues are run and test labels read only from here on)"}
+{"time": "2026-10-11 22:38:15", "stage": "TEST done", "verdict": "INCONCLUSIVE", "delta": 0.27, "ci": [-1.92, 2.29]}

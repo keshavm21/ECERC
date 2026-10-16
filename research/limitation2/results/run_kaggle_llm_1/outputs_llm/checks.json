@@ -1,0 +1,98 @@
+[
+  {
+    "name": "C1 SHA-256 matches the HuggingFace release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "C2 SHA-256 matches the HuggingFace release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "C3 SHA-256 matches the HuggingFace release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "data file has the 17 fields read by MELD/dataloader.py",
+    "passed": true,
+    "hard": true,
+    "detail": "type=list"
+  },
+  {
+    "name": "dialogue IDs are disjoint across splits",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "utterance counts per split match MELD",
+    "passed": true,
+    "hard": false,
+    "detail": "{'train': 9989, 'valid': 1109, 'test': 2610}"
+  },
+  {
+    "name": "dialogue counts per split match MELD",
+    "passed": true,
+    "hard": false,
+    "detail": "{'train': 1038, 'valid': 114, 'test': 280}"
+  },
+  {
+    "name": "feature dimensions fit the released model (text 1024, audio+visual 642, 9 speakers)",
+    "passed": true,
+    "hard": true,
+    "detail": "{'eroberta1': 1024, 'sroberta1': 1024, 'videoVisual': 342, 'videoAudio': 300, 'speakers': 9}"
+  },
+  {
+    "name": "train/dev labels are in 0..6",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train/dev label lengths match feature lengths",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train label counts match the MELD paper",
+    "passed": true,
+    "hard": false,
+    "detail": "[4710, 1205, 268, 683, 1743, 271, 1109]"
+  },
+  {
+    "name": "utterance text is present for every utterance (label-free check)",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "inputs fit the length budget",
+    "passed": true,
+    "hard": true,
+    "detail": "max 256 tokens, mean 152, budget 256"
+  },
+  {
+    "name": "C1: released ECERC dev accuracy >= 55%",
+    "passed": true,
+    "hard": true,
+    "detail": "67.00%"
+  },
+  {
+    "name": "C2: released ECERC dev accuracy >= 55%",
+    "passed": true,
+    "hard": true,
+    "detail": "66.64%"
+  },
+  {
+    "name": "C3: released ECERC dev accuracy >= 55%",
+    "passed": true,
+    "hard": true,
+    "detail": "66.64%"
+  }
+]
