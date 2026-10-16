@@ -1,6 +1,6 @@
 # Experiment notebooks
 
-These are the three Google Colab notebooks in which every reported run was executed. They are kept **exactly as saved from Colab**, with no edits to code cells or outputs, so they serve as the execution record. Only the file names were changed:
+These are the three Google Colab notebooks in which every Stage 0–2 run was executed. The follow-up experiments (report §8) have their own self-contained notebooks in [`../research/limitation2/notebooks/`](../research/limitation2/notebooks/). They are kept **exactly as saved from Colab**, with no edits to code cells or outputs, so they serve as the execution record. Only the file names were changed:
 
 | File | Original Colab name | Stage(s) |
 |---|---|---|

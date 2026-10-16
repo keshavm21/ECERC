@@ -1,6 +1,6 @@
 # Saved results
 
-This folder keeps the minimum set of saved outputs an evaluator needs to check the numbers in [`../docs/report.md`](../docs/report.md). The files were copied unchanged from the Google Drive folders the notebooks wrote to. Per-run folders are not included: weights, prediction CSVs, per-epoch CSVs, training logs and per-run metrics files. See [Not included](#not-included).
+This folder keeps the minimum set of saved outputs an evaluator needs to check the Stage 0–2 numbers in [`../docs/report.md`](../docs/report.md). The outputs of the follow-up experiments (report §8) are in [`../research/limitation2/results/`](../research/limitation2/results/). The files were copied unchanged from the Google Drive folders the notebooks wrote to. Per-run folders are not included: weights, prediction CSVs, per-epoch CSVs, training logs and per-run metrics files. See [Not included](#not-included).
 
 ## Layout
 

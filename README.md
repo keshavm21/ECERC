@@ -31,6 +31,18 @@ This repository is my part (**Person B**, Keshav Mishra) of a three-person cours
   - FL2 was above B0 on all three seeds on validation, then below B0 on test macro-F1 on all three seeds.
   - Validation has only 40 Fear and 22 Disgust utterances.
 
+**Follow-up research: why the rare emotions stay low** ([`research/limitation2/`](research/limitation2/), report §8, full write-up in [`ECERC_L2_followup_report.pdf`](research/limitation2/ECERC_L2_followup_report.pdf)). Five further experiments, each pre-registered with dev-only decisions and at most one test evaluation:
+
+| # | Experiment | Result |
+|---|---|---|
+| 1 | Post-hoc logit adjustment of the three released checkpoints | No gain: Δ macro-F1 −0.24 [95% CI −1.06, +0.68]. The errors are not a decision-threshold problem |
+| 2 | Do the fine-tuned text features leak training labels? (train/dev only) | Not confirmed: only a small train-side advantage |
+| 3 | Representation changes inside ECERC (contrastive loss, sentiment head, more RoBERTa layers, higher lr) | No candidate passed the dev gate; test not used |
+| 4 | RoBERTa-large text expert fused with ECERC | Inconclusive: Fear F1 26.1 → 29.5, macro-F1 +0.27 [−1.92, +2.29] |
+| 5 | Fine-tuned Qwen2.5-7B expert fused with ECERC | Did not pass the dev gate; test not used |
+
+The follow-ups point to overlap between related emotions in ECERC's input features (Fear with Surprise/Sadness/Anger, Disgust with Anger) as the limit, rather than the decision rule, the loss or the training budget.
+
 ---
 
 ## Contents
@@ -81,6 +93,7 @@ My contribution:
   The study used a validation-only pilot (Stage 1) followed by a 15-run final comparison (Stage 2).
 - **Evaluation beyond the upstream metrics:** macro-F1, per-class precision/recall/F1, TP/FP/FN counts, confusion matrices, per-seed comparisons against B0, and a validation-vs-test comparison.
 - **Analysis of why the interventions did not help:** the precision-recall trade-off on the minority classes and the instability of validation selection with very few minority examples.
+- **Five pre-registered follow-up experiments** ([`research/limitation2/`](research/limitation2/)) testing why the minority classes stay low: post-hoc logit adjustment of all three released checkpoints, a feature label-leak check, training-time representation changes, and fusion with a RoBERTa-large text expert and with a fine-tuned 7B LLM expert.
 
 ## Experimental design
 
@@ -107,7 +120,7 @@ Everything else matches upstream `MELD/train.py`: architecture, features, optimi
 - the upstream [`requirement.yml`](requirement.yml) pins Python 3.9.1, PyTorch 2.0.1 (CUDA 11.8 build), NumPy 1.25.0 and scikit-learn 1.3.2;
 - [`OS_info.txt`](OS_info.txt) records Windows 10, an NVIDIA A100 80GB, CUDA 11.4 and cuDNN 8.2.4.
 
-In my environment, R0 scores 67.55 accuracy / 66.58 weighted F1 on test. R0 is a single released checkpoint, not a reproduction of the paper's 3-run average.
+In my environment, R0 scores 67.55 accuracy / 66.58 weighted F1 on test. R0 is a single released checkpoint, not a reproduction of the paper's 3-run average. The follow-up experiments later evaluated all three released checkpoints: their mean (67.32 / 66.46) equals the paper's Table 3.
 
 ## Repository layout
 
@@ -127,6 +140,13 @@ In my environment, R0 scores 67.55 accuracy / 66.58 weighted F1 on test. R0 is a
 │   ├── train_imbalance.py       [mine] training/evaluation for R0, B0, CB, FL, OS, FL+OS
 │   ├── analyze_imbalance.py     [mine] equivalence check, summaries, confusion matrices, pilot rule
 │   └── model.py, train.py, …    upstream ECERC, unchanged
+├── research/limitation2/        [mine] five pre-registered follow-up experiments (Colab/Kaggle)
+│   ├── README.md                results at a glance and how to run each notebook
+│   ├── ECERC_L2_followup_report.pdf  report on the five follow-up experiments
+│   ├── PROTOCOL.md              rules and criteria, fixed before each experiment ran
+│   ├── notebooks/, src/, tests/ self-contained notebooks, their libraries, CPU smoke tests
+│   ├── ecerc_original/          verbatim copies of four upstream MELD files (hashes in MANIFEST.json)
+│   └── results/                 results zips, extracted runs, FINDINGS.md
 ├── IEMOCAP/                     upstream ECERC, unchanged (not used in this work)
 └── requirement.yml, OS_info.txt upstream environment description, unchanged
 ```
@@ -150,6 +170,8 @@ python analyze_imbalance.py summary --split test results/{B0,CB0.999,FL2,OS2,FL2
 
 Each 40-epoch run takes about 1–2 minutes on a T4, plus data loading. The model only runs on a GPU, but `--dry_run` checks data and settings without one.
 
+The follow-up experiments are self-contained notebooks for Colab or Kaggle (they download the data and the three released checkpoints and check every hash). Step-by-step instructions are in [`research/limitation2/README.md`](research/limitation2/README.md).
+
 ## What comes from upstream and what is mine
 
 | Upstream ECERC ([TAN-OpenLab/ECERC](https://github.com/TAN-OpenLab/ECERC)), unchanged | This work |
@@ -158,13 +180,14 @@ Each 40-epoch run takes about 1–2 minutes on a T4, plus data loading. The mode
 | `MELD/model.py`, `dataloader.py`, `loss.py`, `train.py`, `inference.py` | `notebooks/` (executed experiment notebooks) |
 | `MELD/ECERC_MODEL.pkl`, `IEMOCAP/ECERC_MODEL.pkl` (released checkpoints) | `results/` (saved summaries) |
 | `requirement.yml`, `OS_info.txt`, `docs/upstream_README.md` | `docs/` (except `upstream_README.md`), `scripts/`, this README |
+| `research/limitation2/ecerc_original/` (verbatim copies of `MELD/model.py`, `dataloader.py`, `inference.py`, `loss.py`) | `research/limitation2/` (everything else) |
 
 **Proof that the upstream files are unchanged:**
 
 - Git shows no changes to them.
 - The notebooks record their SHA-256 hashes and re-check them after training (`sha256sum -c`: all OK).
 
-The experiment scripts import the upstream model, dataset, loss and data loaders. They do not copy or edit them.
+The experiment scripts import the upstream model, dataset, loss and data loaders. They do not edit them. The follow-up notebooks embed verbatim copies of four upstream files (`research/limitation2/ecerc_original/`) and check their SHA-256 against [`MANIFEST.json`](research/limitation2/MANIFEST.json) at run time.
 
 ## Acknowledgments and citation
 
@@ -185,4 +208,4 @@ The experiment scripts import the upstream model, dataset, loss and data loaders
 }
 ```
 
-Methods used: class-balanced loss (Cui et al., CVPR 2019) and focal loss (Lin et al., ICCV 2017). Dataset: MELD (Poria et al., ACL 2019).
+Methods used: class-balanced loss (Cui et al., CVPR 2019) and focal loss (Lin et al., ICCV 2017). Follow-up experiments: logit adjustment (Menon et al., ICLR 2021), RoBERTa-large (Liu et al., 2019), Qwen2.5-7B-Instruct (Qwen Team, 2024) fine-tuned with QLoRA (Dettmers et al., NeurIPS 2023). The released checkpoints C2 and C3 are downloaded from the authors' Hugging Face repository (`zt-ai/ECERC`). Dataset: MELD (Poria et al., ACL 2019).

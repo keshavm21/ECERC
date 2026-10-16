@@ -1,13 +1,31 @@
-# Limitation 2 (class imbalance): post-hoc logit adjustment on MELD
+# Limitation 2 (class imbalance): follow-up experiments on MELD
 
-This folder holds everything added for the investigation of ECERC's Limitation 2. Nothing outside
-`research/limitation2/` was changed. The original code in `MELD/` and `IEMOCAP/` is untouched; the four
-files this work needs were copied verbatim into `ecerc_original/` (their SHA-256 hashes match the originals,
-see `MANIFEST.json`).
+This folder holds five pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
+study in [`docs/report.md`](../../docs/report.md). Nothing outside `research/limitation2/` was changed. The
+original code in `MELD/` and `IEMOCAP/` is untouched; the four files this work needs were copied verbatim into
+`ecerc_original/` (their SHA-256 hashes match the originals, see `MANIFEST.json`).
 
-The experiment: the three released ECERC MELD checkpoints stay fixed (no training). Each prediction becomes
-`argmax(log p - tau * log(train class prior))`, with `tau` chosen on the dev set only. The test set is used
-once, after every decision is frozen. Rules and success criteria are in [PROTOCOL.md](PROTOCOL.md).
+Each experiment's rules, success criteria and gate were written into [PROTOCOL.md](PROTOCOL.md) before it ran.
+Every decision is made on train/dev only and frozen to a JSON file before the test set is touched; the test set
+is then evaluated at most once per experiment. Full write-ups are in
+[`results/FINDINGS.md`](results/FINDINGS.md) (per-run findings) and
+[`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on all five experiments: the
+audit of the released code, each experiment, why it happened, possible improvements and limitations).
+
+## Results at a glance
+
+| # | Experiment | Platform | Test evaluated? | Verdict |
+|---|---|---|---|---|
+| 1 | Post-hoc logit adjustment of the three released checkpoints (`argmax(log p − τ·log π_train)`, τ chosen on dev) | Colab T4 | yes | **FAILURE**: Δ macro-F1 −0.24 [95% CI −1.06, +0.68]; the +1.0 target is excluded |
+| 2 | Feature-leak check: do the fine-tuned RoBERTa text features carry training labels? | Colab CPU | no (train/dev only) | **NOT CONFIRMED**: gap +7.6 vs control, below the 15 / 10 rule |
+| 3 | Path B: training-time representation changes (RoBERTa layer mean, confusion-aware contrastive loss, sentiment head, higher lr) | Kaggle T4 | no (dev gate not passed) | No candidate beat the original recipe by 0.5 dev macro-F1 (best +0.19) |
+| 4 | Context-aware RoBERTa-large text expert, fused with ECERC by a dev-chosen weight | Kaggle T4 | yes | **INCONCLUSIVE**: Δ macro-F1 +0.27 [−1.92, +2.29]; Fear F1 26.1 → 29.5, but Disgust and Joy fell |
+| 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
+
+Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
+label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), and only
+partly helped by a second model reading the raw text (4, 5). The MELD test set was evaluated twice in total
+(experiments 1 and 4).
 
 ## Folder layout
 
@@ -17,32 +35,38 @@ once, after every decision is frozen. Rules and success criteria are in [PROTOCO
 | `notebooks/ECERC_L2_feature_leak_check.ipynb` | Experiment 2 (done): do the text features carry training labels? |
 | `notebooks/ECERC_L2_pathB_representation.ipynb` | Experiment 3 (done): training-time representation changes |
 | `notebooks/ECERC_L2_expert_fusion.ipynb` | Experiment 4 (done): context-aware text expert fused with ECERC |
-| `notebooks/ECERC_L2_llm_fusion.ipynb` | **Experiment 5 (run next, on Kaggle):** fine-tuned 7B LLM expert fused with ECERC |
+| `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
 | `src/l2_expert.py` | Experiment 4 library (text expert, fusion, gate, test) |
 | `src/l2_llm.py`, `src/l2_llm_worker.py` | Experiment 5 library and its per-GPU training/prediction worker |
 | `ecerc_original/` | Verbatim copies of `MELD/model.py`, `dataloader.py`, `inference.py`, `loss.py` |
-| `tools/build_notebook.py` | Rebuilds the notebook and `MANIFEST.json` after any edit to `src/` |
+| `tools/build_notebook.py` | Rebuilds all five notebooks and `MANIFEST.json` after any edit to `src/` |
 | `tests/smoke_test*.py` | Local CPU tests of each notebook on synthetic data |
+| `ECERC_L2_followup_report.pdf` | Report on the five experiments (written 2026-10-12) |
 | `PROTOCOL.md` | Pre-registered rules, criteria and interpretation |
 | `MANIFEST.json` | SHA-256 of every file and download source |
-| `results/` | Results zips from Colab, extracted runs, and `FINDINGS.md` |
+| `results/` | Results zips from Colab/Kaggle, the extracted run folders, and `FINDINGS.md` (see [results/README.md](results/README.md)) |
 
-## Experiment 5: LLM expert on Kaggle (about 3 to 6 hours on GPU T4 x2, runs in the background)
+## How to re-run each experiment
+
+The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
+and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
+
+### Experiment 5: LLM expert on Kaggle (about 3 to 6 hours on GPU T4 x2; the recorded run took 1 h 40 min)
 
 Same steps as Experiment 3 below, with three differences: import
 `research/limitation2/notebooks/ECERC_L2_llm_fusion.ipynb`, choose **GPU T4 x2** (two seeds train in parallel,
 one per GPU), and download `ecerc_l2/ecerc_l2_llm_results.zip` from **Output** when it finishes.
 
-## Experiment 4: text expert on Kaggle (about 1.5 to 2 hours on a GPU, runs in the background)
+### Experiment 4: text expert on Kaggle (about 1.5 to 2 hours on a GPU, runs in the background)
 
 Same steps as Experiment 3 below, with two differences: import
 `research/limitation2/notebooks/ECERC_L2_expert_fusion.ipynb`, and download
 `ecerc_l2/ecerc_l2_expert_results.zip` from **Output** when it finishes.
 
-## Experiment 3: Path B on Kaggle (about 1.5 to 2.5 hours on a GPU, runs in the background)
+### Experiment 3: Path B on Kaggle (about 1.5 to 2.5 hours on a GPU, runs in the background)
 
 1. Sign in at <https://www.kaggle.com>. The first time only: open your profile → **Settings** → **Phone verification**
    (Kaggle needs this before it allows GPUs and internet access).
@@ -60,12 +84,12 @@ failing, upload the data file as a private Kaggle dataset (**Add Input → Uploa
 `data_local_path='/kaggle/input/<your-dataset>/meld_emotion_semantic_features_roberta.pkl'` to `CONFIG`
 in the first code cell.
 
-## Experiment 2: feature-leak check on Google Colab (about 10 minutes, CPU)
+### Experiment 2: feature-leak check on Google Colab (about 10 minutes, CPU)
 
 Same steps as below, with two differences: upload `notebooks/ECERC_L2_feature_leak_check.ipynb`, and choose a
 **CPU** runtime (no GPU needed). The download is `ecerc_l2_leak_results.zip`; put it into `results/`.
 
-## Experiment 1: how to run it on Google Colab (about 15 minutes)
+### Experiment 1: post-hoc logit adjustment on Google Colab (about 15 minutes)
 
 1. Go to <https://colab.research.google.com> and sign in with a Google account.
 2. **File → Upload notebook** → choose `research/limitation2/notebooks/ECERC_L2_posthoc_LA.ipynb` from this repository.
@@ -94,6 +118,13 @@ once per run, and the first complete run is the result.
 
 ```bash
 cd research/limitation2
-python3 tools/build_notebook.py   # after editing src/l2_posthoc.py
-.venv/bin/python tests/smoke_test.py   # needs a venv with torch, numpy, pandas, scikit-learn, matplotlib
+python3 tools/build_notebook.py          # after editing anything in src/
+.venv/bin/python tests/smoke_test.py          # Experiment 1; needs torch, numpy, pandas, scikit-learn, matplotlib
+.venv/bin/python tests/smoke_test_leak.py     # Experiment 2
+.venv/bin/python tests/smoke_test_pathb.py    # Experiment 3
+.venv/bin/python tests/smoke_test_expert.py   # Experiment 4; also needs transformers
+.venv/bin/python tests/smoke_test_llm.py      # Experiment 5; also needs transformers and peft
 ```
+
+The smoke tests run each notebook's real code path on small synthetic data (synthetic numbers are meaningless).
+They also check that no test-split label is read before the freeze, and that gated runs skip the test.

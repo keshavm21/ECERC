@@ -1,6 +1,6 @@
 # Reproducing the Limitation 2 experiments
 
-These steps re-run every result in [`report.md`](report.md). They follow what the notebooks in [`../notebooks/`](../notebooks/) actually ran, minus the Colab-specific file shuffling.
+These steps re-run every Stage 0–2 result in [`report.md`](report.md). The follow-up experiments (report §8) are run differently; see [section 7](#7-follow-up-experiments). They follow what the notebooks in [`../notebooks/`](../notebooks/) actually ran, minus the Colab-specific file shuffling.
 
 ## 1. Requirements
 
@@ -152,3 +152,21 @@ python scripts/make_figures.py --results figdata --out docs/figures
 ```
 
 Only matplotlib is needed. The per-run values the figures plot are listed, rounded to 2 decimals, in `results/stage2/summary_*/per_run.csv`.
+
+## 7. Follow-up experiments
+
+The five follow-up experiments in [`report.md` §8](report.md#8-follow-up-experiments-why-the-minority-classes-stay-low) do not use `train_imbalance.py`. Each is a self-contained notebook in [`../research/limitation2/notebooks/`](../research/limitation2/notebooks/) that:
+
+- downloads the MELD features and the three released checkpoints (C2 and C3 from the authors' Hugging Face repository `zt-ai/ECERC`) and checks their SHA-256;
+- embeds verbatim copies of the upstream MELD files and its own analysis library, also hash-checked;
+- runs end to end with **Run all** and writes a results zip.
+
+| Experiment | Notebook | Platform used | Approx. time |
+|---|---|---|---|
+| 1. Post-hoc logit adjustment | `ECERC_L2_posthoc_LA.ipynb` | Colab, T4 GPU | 15 min |
+| 2. Feature-leak check | `ECERC_L2_feature_leak_check.ipynb` | Colab, CPU | 10 min |
+| 3. Representation changes (Path B) | `ECERC_L2_pathB_representation.ipynb` | Kaggle, GPU T4 x2 | 1.5–2.5 h |
+| 4. Text expert fusion | `ECERC_L2_expert_fusion.ipynb` | Kaggle, GPU | 1.5–2 h |
+| 5. LLM expert fusion | `ECERC_L2_llm_fusion.ipynb` | Kaggle, GPU T4 x2 | 3–6 h |
+
+Step-by-step instructions, troubleshooting and the local CPU smoke tests are in [`../research/limitation2/README.md`](../research/limitation2/README.md). Each experiment evaluates the test set at most once, after its decisions are frozen; re-running one is a new test look and should be reported as such.
