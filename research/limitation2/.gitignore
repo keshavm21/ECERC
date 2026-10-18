@@ -8,3 +8,4 @@ tests/_smoke_pathb/
 tests/_smoke_expert/
 tests/_smoke_llm/
 tests/_smoke_audio/
+tests/_smoke_zeroshot/

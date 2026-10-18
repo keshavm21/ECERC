@@ -1,6 +1,6 @@
 # Limitation 2 (class imbalance): follow-up experiments on MELD
 
-This folder holds six pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
+This folder holds seven pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
 study in [`docs/report.md`](../../docs/report.md). Nothing outside `research/limitation2/` was changed. The
 original code in `MELD/` and `IEMOCAP/` is untouched; the four files this work needs were copied verbatim into
 `ecerc_original/` (their SHA-256 hashes match the originals, see `MANIFEST.json`).
@@ -11,7 +11,7 @@ is then evaluated at most once per experiment. Full write-ups are in
 [`results/FINDINGS.md`](results/FINDINGS.md) (per-run findings) and
 [`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on experiments 1–5: the
 audit of the released code, each experiment, why it happened, possible improvements and limitations).
-Experiment 6 is written up in `FINDINGS.md` only.
+Experiment 6 is written up in `FINDINGS.md` only. Experiment 7 was pre-registered on 2026-10-19 and has not been run yet.
 
 ## Results at a glance
 
@@ -23,6 +23,7 @@ Experiment 6 is written up in `FINDINGS.md` only.
 | 4 | Context-aware RoBERTa-large text expert, fused with ECERC by a dev-chosen weight | Kaggle T4 | yes | **INCONCLUSIVE**: Δ macro-F1 +0.27 [−1.92, +2.29]; Fear F1 26.1 → 29.5, but Disgust and Joy fell |
 | 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
 | 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed (and a bge event-input arm), unchanged ECERC retrained | Kaggle T4 | no (dev gate not passed) | All four arms within 0.1 dev macro-F1 (best +0.08); the better audio trades Sadness (+2.2) against Joy (−2.4) |
+| 7 | Zero-shot Qwen2.5-32B-Instruct (4-bit, never trained on MELD labels), label-free calibration, fused with the released ECERC checkpoints by a dev-chosen weight | Kaggle 2× T4 | — | **Pending**: pre-registered 2026-10-19, not yet run; a dev-only 3B pilot gave a cross-fitted dev gain of +0.76 after calibration ([pilot](results/pilot_local_zeroshot_3b/README.md)) |
 
 Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
 label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), only
@@ -39,14 +40,16 @@ correcting the audio/visual routing (6). The MELD test set was evaluated twice i
 | `notebooks/ECERC_L2_expert_fusion.ipynb` | Experiment 4 (done): context-aware text expert fused with ECERC |
 | `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
 | `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (done): self-supervised audio features for ECERC |
+| `notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb` | Experiment 7 (pending): zero-shot LLM fused with ECERC |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
 | `src/l2_expert.py` | Experiment 4 library (text expert, fusion, gate, test) |
 | `src/l2_llm.py`, `src/l2_llm_worker.py` | Experiment 5 library and its per-GPU training/prediction worker |
 | `src/l2_audio.py` | Experiment 6 library (audio download and alignment, frozen encoders, train-only selection, screen, confirmation, test) |
+| `src/l2_zeroshot.py` | Experiment 7 library (cached zero-shot LLM scoring, label-free calibration; fusion, gate and test reuse `l2_expert.py`) |
 | `ecerc_original/` | Verbatim copies of `MELD/model.py`, `dataloader.py`, `inference.py`, `loss.py` |
-| `tools/build_notebook.py` | Rebuilds all six notebooks and `MANIFEST.json` after any edit to `src/` |
+| `tools/build_notebook.py` | Rebuilds all seven notebooks and `MANIFEST.json` after any edit to `src/` |
 | `tests/smoke_test*.py` | Local CPU tests of each notebook on synthetic data |
 | `ECERC_L2_followup_report.pdf` | Report on the five experiments (written 2026-10-12) |
 | `PROTOCOL.md` | Pre-registered rules, criteria and interpretation |
@@ -57,6 +60,18 @@ correcting the audio/visual routing (6). The MELD test set was evaluated twice i
 
 The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
 and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
+
+### Experiment 7: zero-shot LLM fusion on Kaggle (about 1 to 1.5 hours on GPU T4 x2)
+
+Same steps as Experiment 3 below, with three differences:
+- import `research/limitation2/notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb`;
+- choose **GPU T4 x2** (the 4-bit 32B model needs both GPUs) and **Internet → On**, because the model is a 19 GB
+  download, pinned to a fixed revision;
+- download `ecerc_l2/ecerc_l2_zeroshot_results.zip` from **Output** when it finishes.
+
+If a single GPU is selected, the setup cell stops with a message before downloading anything. The notebook prints
+the LLM's dev progress, the dev-only fusion analysis and the gate decision. If the gate fails, it finishes normally
+and the test set stays sealed.
 
 ### Experiment 6: audio evidence on Kaggle (2.5 to 3.5 hours on a T4 if Stage 2 runs; the recorded run stopped at the gate after 1 h 48 min)
 
@@ -147,6 +162,7 @@ python3 tools/build_notebook.py          # after editing anything in src/
 .venv/bin/python tests/smoke_test_expert.py   # Experiment 4; also needs transformers
 .venv/bin/python tests/smoke_test_llm.py      # Experiment 5; also needs transformers and peft
 .venv/bin/python tests/smoke_test_audio.py    # Experiment 6; also needs transformers, tokenizers and soundfile
+.venv/bin/python tests/smoke_test_zeroshot.py # Experiment 7; also needs transformers and tokenizers
 ```
 
 The smoke tests run each notebook's real code path on small synthetic data (synthetic numbers are meaningless).

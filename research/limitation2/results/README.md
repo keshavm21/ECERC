@@ -12,6 +12,8 @@ and headline numbers as printed by the notebook.
 | 4. RoBERTa text expert fusion | `ecerc_l2_expert_results.zip` | `run_kaggle_expert_1/outputs_expert/` | Kaggle T4, 2026-10-11 |
 | 5. LLM expert fusion | `ecerc_l2_llm_results.zip` | `run_kaggle_llm_1/outputs_llm/` | Kaggle 2× T4, 2026-10-12 |
 | 6. Self-supervised audio evidence | `ecerc_l2_audio_results.zip` | `run_kaggle_audio_1/outputs_audio/` | Kaggle T4, 2026-10-18 |
+| 7. Zero-shot LLM fusion | `ecerc_l2_zeroshot_results.zip` (when run) | `run_kaggle_zeroshot_1/outputs_zeroshot/` (when run) | pending; pre-registered 2026-10-19 |
+| 7, dev-only pilot (3B, local) | — | `pilot_local_zeroshot_3b/` (script, output, dev predictions) | Apple M1 (MLX), 2026-10-19 |
 
 ## What a run folder contains
 

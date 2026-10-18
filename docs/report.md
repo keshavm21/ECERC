@@ -38,6 +38,8 @@ The evidence points to overlap between related emotions in the input features an
 
 A sixth follow-up tested the input-feature explanation directly (§8.7). It retrained the unchanged ECERC on frozen self-supervised speech features in place of its openSMILE audio, and also corrected the audio/visual input routing. The new audio features are much stronger on their own, but no variant moved dev macro-F1 (best +0.08, against a +0.5 gate), so the test set was not used.
 
+A seventh follow-up, pre-registered on 2026-10-19 and **not yet run**, fuses ECERC with a zero-shot 32B LLM that has never been trained on MELD's labels (§8.8).
+
 ---
 
 ## 1. Background
@@ -399,6 +401,7 @@ These experiments differ from Stages 0–2 in three ways:
 | 4 | RoBERTa-large text expert fused with ECERC | yes | INCONCLUSIVE |
 | 5 | Qwen2.5-7B LLM expert fused with ECERC | no (dev gate) | gate not passed |
 | 6 | Self-supervised audio evidence for ECERC | no (dev gate) | gate not passed |
+| 7 | Zero-shot LLM fused with ECERC (§8.8) | — | pending: pre-registered, not yet run |
 
 ### 8.1 Experiment 1: post-hoc logit adjustment
 
@@ -509,6 +512,15 @@ The best arm gained +0.08 against a +0.5 gate, so **the test set was not used**.
   Experiment 4's text expert showed the same direction on test (Sadness +2.2, Joy −2.6). On MELD the text evidence dominates, and better non-text evidence shifts the boundaries between related emotions rather than separating them.
 
 Per-run details are in [`FINDINGS.md`](../research/limitation2/results/FINDINGS.md).
+
+### 8.8 Experiment 7 (pre-registered, not yet run): a zero-shot LLM fused with ECERC
+
+Experiments 4 to 6 share one failure mode. Every second source of evidence (a RoBERTa expert and an LLM, both trained on MELD's labels, and better audio) traded one class for another. A zero-shot LLM is never trained on MELD's skewed labels. Published zero-shot results on the MELD test set show the error profile ECERC lacks: LLaMA-70B reaches Fear 33.3, Disgust 39.8 and Sadness 47.3 F1, against ECERC's 26.1, 31.4 and 41.0, while it is weaker on Neutral and Joy.
+
+- **Pilot (dev only).** A zero-shot 3B model run locally was weak on its own (dev macro-F1 35.6). Fused with the released checkpoints, it had a cross-fitted dev gain of −0.91 as is, and +0.76 after a label-free calibration: its mean dev prediction was replaced by the training prior. See [`pilot_local_zeroshot_3b/`](../research/limitation2/results/pilot_local_zeroshot_3b/README.md).
+- **Design.** Qwen2.5-32B-Instruct (4-bit, frozen) scores every dev and test utterance with past context only, using the pilot's fixed prompt. It is calibrated the same way, with the calibration frozen on dev, and fused with C1–C3 by Experiment 4's procedure: one weight chosen on dev, a cross-fitted +0.5 gate, and one test pass. This would be the third test look, so a Bonferroni-adjusted interval is reported too.
+
+The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-19), and the notebook is `research/limitation2/notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb`.
 
 ## 9. Limitations of this study
 

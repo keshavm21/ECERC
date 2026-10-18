@@ -1,0 +1,44 @@
+loaded mlx-community/Qwen2.5-3B-Instruct-4bit@4f83f8f1 in 35s
+label first tokens: {'neutral': [' neutral', ' Neutral', 'neutral', 'Neutral'], 'surprise': [' surprise', 'sur', 'Sur', ' Surprise'], 'fear': ['f', ' fear', ' Fear', 'Fear'], 'sadness': [' Sad', ' sadness', 'Sad', 'sad'], 'joy': ['joy', ' joy', ' Joy', 'Joy'], 'disgust': [' Dis', 'dis', 'Dis', ' disgust'], 'anger': ['anger', ' Ang', 'Ang', ' anger']}
+  dialogue 5/114, 42 utterances, 2233 new tokens, 38s (7.5s per dialogue)
+  dialogue 10/114, 99 utterances, 5214 new tokens, 116s (11.6s per dialogue)
+  dialogue 15/114, 158 utterances, 8292 new tokens, 182s (12.1s per dialogue)
+  dialogue 20/114, 229 utterances, 12096 new tokens, 284s (14.2s per dialogue)
+  dialogue 25/114, 281 utterances, 14826 new tokens, 313s (12.5s per dialogue)
+  dialogue 30/114, 336 utterances, 17704 new tokens, 393s (13.1s per dialogue)
+  dialogue 35/114, 395 utterances, 20805 new tokens, 485s (13.8s per dialogue)
+  dialogue 40/114, 423 utterances, 22271 new tokens, 538s (13.5s per dialogue)
+  dialogue 45/114, 456 utterances, 24045 new tokens, 562s (12.5s per dialogue)
+  dialogue 50/114, 510 utterances, 26899 new tokens, 661s (13.2s per dialogue)
+  dialogue 55/114, 546 utterances, 28828 new tokens, 702s (12.8s per dialogue)
+  dialogue 60/114, 594 utterances, 31399 new tokens, 735s (12.3s per dialogue)
+  dialogue 65/114, 639 utterances, 33826 new tokens, 758s (11.7s per dialogue)
+  dialogue 70/114, 703 utterances, 37250 new tokens, 827s (11.8s per dialogue)
+  dialogue 75/114, 757 utterances, 40087 new tokens, 859s (11.5s per dialogue)
+  dialogue 80/114, 815 utterances, 43232 new tokens, 905s (11.3s per dialogue)
+  dialogue 85/114, 863 utterances, 45750 new tokens, 941s (11.1s per dialogue)
+  dialogue 90/114, 906 utterances, 47963 new tokens, 1003s (11.1s per dialogue)
+  dialogue 95/114, 956 utterances, 50541 new tokens, 1079s (11.4s per dialogue)
+  dialogue 100/114, 1007 utterances, 53221 new tokens, 1127s (11.3s per dialogue)
+  dialogue 105/114, 1032 utterances, 54441 new tokens, 1148s (10.9s per dialogue)
+  dialogue 110/114, 1077 utterances, 56772 new tokens, 1195s (10.9s per dialogue)
+  dialogue 114/114, 1109 utterances, 58410 new tokens, 1215s (10.7s per dialogue)
+inference done: 1109 utterances; label probability mass mean 0.988
+DEV (1109 utterances; 40 Fear, 22 Disgust)
+  zero-shot LLM alone                acc 55.18  wF1 50.67  macro 35.58 | neu  68.4 sur  47.1 fea   9.3 sad  32.2 joy  30.5 dis  10.3 ang  51.3
+  LLM predicted-label counts: {'neu': 718, 'sur': 130, 'fea': 3, 'sad': 38, 'joy': 40, 'dis': 17, 'ang': 163} | true: {'neu': 470, 'sur': 150, 'fea': 40, 'sad': 111, 'joy': 163, 'dis': 22, 'ang': 153}
+  ECERC C1                           acc 67.00  wF1 65.88  macro 54.42 | neu  79.5 sur  64.5 fea  30.8 sad  44.2 joy  62.6 dis  42.1 ang  57.3
+  ECERC C2                           acc 66.64  wF1 65.56  macro 53.54 | neu  79.4 sur  64.5 fea  32.3 sad  44.6 joy  62.2 dis  35.9 ang  56.0
+  ECERC C3                           acc 66.64  wF1 65.40  macro 54.16 | neu  78.8 sur  63.8 fea  30.0 sad  43.8 joy  64.0 dis  43.2 ang  55.6
+FUSION score = (1-w) log p_ECERC + w log p_LLM, mean over C1-C3:
+  dev macro-F1 by w: 0.0:54.04, 0.05:54.19, 0.1:52.17, 0.15:50.52, 0.2:48.45, 0.25:47.15, 0.3:46.11, 0.35:45.16, 0.4:43.95, 0.45:43.21, 0.5:41.66, 0.55:39.72, 0.6:38.94, 0.65:38.15, 0.7:37.56, 0.75:37.47, 0.8:37.27, 0.85:36.82, 0.9:36.56, 0.95:36.39, 1.0:35.58
+  in-sample best w = 0.05: 54.19 vs 54.04 for ECERC alone (+0.16)
+  CROSS-FITTED dev gain -0.91 (fold w [0.0, 0.05, 0.0, 0.05, 0.05]); dev bootstrap 95% CI [-2.49, 0.33]; projected test SE 0.47  [Experiment 4: +0.97, Experiment 5: -0.98, gate +0.50]
+  per-class dev F1 change at w=0.05 (mean over C1-C3): neu -0.4, sur +1.7, fea -2.1, sad +1.6, joy -1.3, dis -1.5, ang +3.1
+  weighted F1 change at w=0.05: +0.37; accuracy change +0.87
+  fea: ECERC wrong but LLM right 1.0, ECERC right but LLM wrong 8.7 (n=40)
+  dis: ECERC wrong but LLM right 0.0, ECERC right but LLM wrong 5.7 (n=22)
+  sad: ECERC wrong but LLM right 9.0, ECERC right but LLM wrong 26.0 (n=111)
+  LLM, prior-matched (label-free)    acc 56.36  wF1 52.79  macro 39.32 | neu  69.0 sur  48.9 fea  20.8 sad  34.0 joy  36.5 dis  14.3 ang  51.6
+  secondary, prior-matched LLM: in-sample best w 0.05 +0.76; cross-fitted dev gain +0.76
+exit 0

@@ -21,6 +21,7 @@ PATHB_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_pathB_representation.
 EXPERT_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_expert_fusion.ipynb')
 LLM_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_llm_fusion.ipynb')
 AUDIO_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_audio_evidence.ipynb')
+ZEROSHOT_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_zeroshot_llm_fusion.ipynb')
 OBSERVED_DATA_SHA = 'a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80'  # run_colab_1
 HF = 'https://huggingface.co/zt-ai/ECERC/resolve/main/MELD/'
 CHECKPOINTS = [
@@ -47,6 +48,9 @@ AUDIO_ENCODERS = [
 ]
 TEXT_ENCODER = dict(name='bge-large-en-v1.5', repo='BAAI/bge-large-en-v1.5',
                     revision='d4aa6901d3a41ba39fb536a557fa166f842b0e09', max_len=128, batch=64)
+# Experiment 7: a pre-quantized 4-bit (bitsandbytes NF4) copy of Qwen/Qwen2.5-32B-Instruct, pinned to a revision.
+ZEROSHOT_LLM = dict(repo='unsloth/Qwen2.5-32B-Instruct-bnb-4bit', revision='aa79e3472818bdec779075d80928602591d9f2a0',
+                    base='Qwen/Qwen2.5-32B-Instruct', license='apache-2.0', safetensors_gb=19.2)
 ENCODER_WEIGHTS = {  # documentation only: the notebook loads each repository at the pinned revision
     'openai/whisper-large-v3': dict(file='model.safetensors', bytes=3087130976, license='apache-2.0',
                                     sha256='a8e94b85976e5864ba3e9525c7e6c83b2a1eca42d4b797a0c7c24d778e40fd95'),
@@ -757,6 +761,113 @@ except ImportError:
     return files
 
 
+ZEROSHOT_CONFIG_CELL = """
+# ===== Configuration: leave as is. (Set TRUST_DATA_PICKLE = True only if the data cell asks you to.) =====
+import os
+
+TRUST_DATA_PICKLE = False
+
+if os.path.isdir('/kaggle/working'):
+    WORK_DIR = '/kaggle/working/ecerc_l2'
+elif os.path.isdir('/content'):
+    WORK_DIR = '/content/ecerc_l2'
+else:
+    WORK_DIR = os.path.abspath('ecerc_l2_work')
+HF = '%(hf)s'
+CONFIG = dict(
+    work_dir=WORK_DIR,
+    cache_dir='/tmp/ecerc_l2_cache',        # the 19 GB model download; not part of the saved output
+    data_file_id='%(data_id)s',            # authors' Google Drive (linked from the official ECERC README)
+    data_filename='%(data_name)s',
+    checkpoints=[%(ckpts)s],
+    trust_data_pickle=TRUST_DATA_PICKLE,
+    expected_split_utterances=dict(train=9989, valid=1109, test=2610),
+    expected_split_dialogues=dict(train=[1038, 1039], valid=114, test=280),
+    min_dev_acc=0.55,
+    llm_model='%(llm_repo)s',  # 4-bit copy of %(llm_base)s
+    llm_revision='%(llm_rev)s',
+    llm_max_memory='13GiB',                 # per GPU; the 4-bit weights are about 19 GB in total
+    llm_min_gpu_gb=28,                      # two T4s; one 16 GB GPU is not enough
+    gate_min_gain=0.5,                      # the test runs only if the cross-fitted dev gain is >= 0.5
+    n_folds=5, fold_seed=12345, power_B=2000, bootstrap_B=10000, boot_seed=20261019,
+    test_looks=3,                           # experiments 1 and 4 opened the test set before this one
+    offline=False,                          # True only for the local smoke test
+)
+os.makedirs(WORK_DIR, exist_ok=True)
+print('Working directory:', WORK_DIR)
+"""
+
+
+def build_zeroshot():
+    files = code_files()
+    files['l2_expert.py'] = os.path.join(ROOT, 'src', 'l2_expert.py')
+    files['l2_zeroshot.py'] = os.path.join(ROOT, 'src', 'l2_zeroshot.py')
+    code_cell = code_files_cell(
+        files, '# Writes the verbatim ECERC files and the analysis code, checks their SHA-256, then sets up.\n',
+        'import l2_posthoc\nimportlib.reload(l2_posthoc)\nimport l2_expert\nimportlib.reload(l2_expert)\n'
+        'import l2_zeroshot as LZ\nimportlib.reload(LZ)\nS = LZ.stage_setup(CONFIG, CODE_DIR)\n')
+    ckpts = ''.join(f"\n        dict(name='{n}', url=HF + '{f}', sha256='{h}')," for n, f, h in CHECKPOINTS) + '\n    '
+    cells = [
+        md("""
+# ECERC Limitation 2, Experiment 7: a zero-shot LLM fused with ECERC
+
+Experiments 4 and 5 fused ECERC with models fine-tuned on MELD. Both inherit MELD's label skew, so the fusion traded one class for another. A **zero-shot** LLM never sees MELD's labels. Published zero-shot results on the MELD test set show exactly the error profile ECERC lacks: higher F1 on Fear, Disgust and Sadness, lower on Neutral and Joy.
+
+This notebook runs **Qwen2.5-32B-Instruct** (4-bit, frozen) on every dev and test utterance, with its past context only (ECERC's task setting). It reads the model's probabilities for the seven emotion words and removes the model's own label bias without labels. It then combines the result with each released ECERC checkpoint through **one weight chosen on dev**, the same procedure as Experiment 4.
+
+The test runs **once**, and only if a cross-fitted dev estimate shows at least +0.5 macro-F1, after every decision is frozen. This is the third look at the MELD test set, so a multiplicity-adjusted interval is reported as well.
+
+Expect about 1 to 1.5 hours on Kaggle **GPU T4 x2** (the model needs both GPUs) with Internet **On**. Run it with **Save Version → Save & Run All (Commit)**.
+"""),
+        code(ZEROSHOT_CONFIG_CELL % dict(hf=HF, data_id=DATA_FILE_ID, data_name=DATA_FILENAME, ckpts=ckpts,
+                                         llm_repo=ZEROSHOT_LLM['repo'], llm_base=ZEROSHOT_LLM['base'],
+                                         llm_rev=ZEROSHOT_LLM['revision'])),
+        md("""
+## 1. Code
+The four original ECERC files (verbatim), `l2_posthoc.py` and `l2_expert.py` from the earlier experiments (unchanged), and `l2_zeroshot.py`, embedded as base64 and checked by SHA-256. Readable copies are in `research/limitation2/`.
+"""),
+        code(code_cell),
+        md("""
+## 2. Downloads (checkpoints, MELD features) and data checks (only train and dev labels are read)
+"""),
+        code('LZ.stage_prepare(S)'),
+        md("""
+## 3. Released ECERC checkpoints on dev
+"""),
+        code('LZ.stage_ecerc_dev(S)'),
+        md("""
+## 4. Zero-shot LLM on the dev utterances (downloads about 19 GB, then about 15 minutes)
+"""),
+        code('LZ.stage_llm_dev(S)'),
+        md("""
+## 5. Dev-only calibration, fusion weight, cross-fitted forecast and gate
+"""),
+        code('LZ.stage_dev_analysis(S)'),
+        md("""
+## 6. Freeze
+"""),
+        code('LZ.stage_freeze(S)'),
+        md("""
+## 7. Test evaluation (runs once; skipped if the gate failed)
+"""),
+        code('LZ.stage_test(S)'),
+        md("""
+## 8. Results
+Prints the summary and writes `ecerc_l2_zeroshot_results.zip`. On Kaggle it's under **Output** (`ecerc_l2/ecerc_l2_zeroshot_results.zip`).
+"""),
+        code("""
+zpath = LZ.stage_package(S)
+try:
+    from google.colab import files
+    files.download(zpath)
+except ImportError:
+    print('Download this file from the Output panel ->', zpath)
+"""),
+    ]
+    write_notebook(ZEROSHOT_NOTEBOOK, cells, gpu=True)
+    return files
+
+
 def write_manifest(files):
     manifest = dict(
         description='Hashes and sources for research/limitation2. Regenerate with tools/build_notebook.py.',
@@ -764,9 +875,10 @@ def write_manifest(files):
         verbatim_copies={f'ecerc_original/{n}': sha256(p) for n, p in files.items() if n in ORIGINALS},
         analysis_library={f'src/{n}': sha256(os.path.join(ROOT, 'src', n))
                           for n in ('l2_posthoc.py', 'l2_feature_leak.py', 'l2_pathb.py', 'l2_expert.py', 'l2_llm.py',
-                                    'l2_llm_worker.py', 'l2_audio.py')},
+                                    'l2_llm_worker.py', 'l2_audio.py', 'l2_zeroshot.py')},
         notebook={os.path.relpath(p, ROOT): sha256(p)
-                  for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK, LLM_NOTEBOOK, AUDIO_NOTEBOOK)},
+                  for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK, LLM_NOTEBOOK, AUDIO_NOTEBOOK,
+                            ZEROSHOT_NOTEBOOK)},
         checkpoints={n: dict(url=HF + f, sha256=h) for n, f, h in CHECKPOINTS},
         in_repo_checkpoint={'MELD/ECERC_MODEL.pkl': sha256(os.path.join(REPO, 'MELD', 'ECERC_MODEL.pkl'))},
         data=dict(file=DATA_FILENAME, google_drive_file_id=DATA_FILE_ID,
@@ -775,7 +887,9 @@ def write_manifest(files):
         audio_data=dict(AUDIO_DATASET, url=f'https://huggingface.co/datasets/{AUDIO_DATASET["repo"]}',
                         note='16 kHz mono FLAC clips extracted from the official MELD videos (experiment 6)'),
         encoders={e['repo']: dict(revision=e['revision'], url=f'https://huggingface.co/{e["repo"]}',
-                                  weights=ENCODER_WEIGHTS[e['repo']]) for e in AUDIO_ENCODERS + [TEXT_ENCODER]})
+                                  weights=ENCODER_WEIGHTS[e['repo']]) for e in AUDIO_ENCODERS + [TEXT_ENCODER]},
+        zeroshot_llm=dict(ZEROSHOT_LLM, url=f'https://huggingface.co/{ZEROSHOT_LLM["repo"]}',
+                          note='experiment 7: frozen, zero-shot; loaded at the pinned revision'))
     with open(os.path.join(ROOT, 'MANIFEST.json'), 'w') as f:
         json.dump(manifest, f, indent=2)
         f.write('\n')
@@ -788,6 +902,8 @@ if __name__ == '__main__':
     build_expert()
     build_llm()
     build_audio()
+    build_zeroshot()
     write_manifest(files)
     print('wrote', ', '.join(os.path.relpath(p, REPO) for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK,
-                                                                LLM_NOTEBOOK, AUDIO_NOTEBOOK)), 'and MANIFEST.json')
+                                                                LLM_NOTEBOOK, AUDIO_NOTEBOOK, ZEROSHOT_NOTEBOOK)),
+          'and MANIFEST.json')
