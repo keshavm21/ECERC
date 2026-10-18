@@ -1,0 +1,13 @@
+{"time": "2026-10-18 06:04:06", "stage": "setup", "device": "cuda", "gpu": "Tesla T4", "torch": "2.11.0+cu128", "transformers": "5.16.1"}
+{"time": "2026-10-18 06:04:18", "stage": "data ready", "MB": 485.7, "sha256": "a0349614b2b58e8b"}
+{"time": "2026-10-18 06:04:18", "stage": "data loaded", "seconds": 0.7, "dialogues": {"train": 1038, "valid": 114, "test": 280}}
+{"time": "2026-10-18 06:04:18", "stage": "feature file ready", "utterances": 13708}
+{"time": "2026-10-18 06:04:37", "stage": "audio aligned", "seconds": 19.0, "no_audio": 3, "clips": {"train": 9987, "valid": 1108, "test": 2610}}
+{"time": "2026-10-18 07:07:03", "stage": "features extracted", "minutes": 62.4, "whisper-large-v3": 2450.2, "wavlm-large": 1229.7, "bge-large-en-v1.5": 20.4}
+{"time": "2026-10-18 07:24:45", "stage": "features selected", "minutes": 17.6, "selected": "whisper-large-v3 layers 29-32", "oof_macro_f1": 27.82}
+{"time": "2026-10-18 07:31:30", "stage": "stage 1 arm done", "arm": "A0_original", "mean_dev_macro_f1": 54.13}
+{"time": "2026-10-18 07:38:07", "stage": "stage 1 arm done", "arm": "A1_routing_fixed", "mean_dev_macro_f1": 54.09}
+{"time": "2026-10-18 07:44:59", "stage": "stage 1 arm done", "arm": "A2_ssl_audio", "mean_dev_macro_f1": 54.11}
+{"time": "2026-10-18 07:51:49", "stage": "stage 1 arm done", "arm": "A3_ssl_audio_bge_event", "mean_dev_macro_f1": 54.21}
+{"time": "2026-10-18 07:51:49", "stage": "stage 1 done", "minutes": 27.1, "winner": "A3_ssl_audio_bge_event", "gain": 0.08, "proceed": false}
+{"time": "2026-10-18 07:51:49", "stage": "FREEZE", "sha256": "256a7f2060bb5326", "winner": "A3_ssl_audio_bge_event", "proceed": false}

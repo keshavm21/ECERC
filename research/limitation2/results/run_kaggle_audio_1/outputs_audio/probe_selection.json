@@ -1,0 +1,224 @@
+{
+  "rule": "highest out-of-fold train macro-F1 among the candidates; ties to the earlier one",
+  "selected": {
+    "name": "whisper-large-v3 layers 29-32",
+    "encoder": "whisper-large-v3",
+    "layers": [
+      29,
+      32
+    ],
+    "oof_train_macro_f1": 27.821155555628046
+  },
+  "table": [
+    {
+      "feature": "whisper-large-v3 layers 1-4",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 21.860087661687803,
+      "oof_train_weighted_f1": 38.821688857426714,
+      "oof_fear_f1": 4.3478260869565215,
+      "oof_disgust_f1": 3.3271719038817005,
+      "dev_macro_f1_mean_of_folds": 21.858354909821863,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "whisper-large-v3 layers 5-8",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 22.53456896804455,
+      "oof_train_weighted_f1": 37.79218099431252,
+      "oof_fear_f1": 7.357859531772576,
+      "oof_disgust_f1": 4.635761589403973,
+      "dev_macro_f1_mean_of_folds": 22.646319153796718,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "whisper-large-v3 layers 9-12",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 22.379737247352388,
+      "oof_train_weighted_f1": 38.3878388592809,
+      "oof_fear_f1": 4.444444444444445,
+      "oof_disgust_f1": 3.9538714991762767,
+      "dev_macro_f1_mean_of_folds": 23.770803060058977,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "whisper-large-v3 layers 13-16",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 22.492076361403797,
+      "oof_train_weighted_f1": 38.0665680125603,
+      "oof_fear_f1": 5.414551607445008,
+      "oof_disgust_f1": 5.144694533762058,
+      "dev_macro_f1_mean_of_folds": 24.2887313181334,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "whisper-large-v3 layers 17-20",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 24.27305105736109,
+      "oof_train_weighted_f1": 39.71348981107859,
+      "oof_fear_f1": 5.802047781569966,
+      "oof_disgust_f1": 8.552631578947368,
+      "dev_macro_f1_mean_of_folds": 26.88172123000127,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "whisper-large-v3 layers 21-24",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 25.348889804218018,
+      "oof_train_weighted_f1": 41.183740825376184,
+      "oof_fear_f1": 4.4673539518900345,
+      "oof_disgust_f1": 8.319467554076539,
+      "dev_macro_f1_mean_of_folds": 26.709432550754382,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "whisper-large-v3 layers 25-28",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 26.8704262203275,
+      "oof_train_weighted_f1": 42.774772718831564,
+      "oof_fear_f1": 8.421052631578947,
+      "oof_disgust_f1": 7.017543859649122,
+      "dev_macro_f1_mean_of_folds": 28.526758674350116,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "whisper-large-v3 layers 29-32",
+      "role": "candidate",
+      "dim": 1280,
+      "oof_train_macro_f1": 27.821155555628046,
+      "oof_train_weighted_f1": 43.55844823931937,
+      "oof_fear_f1": 7.4074074074074066,
+      "oof_disgust_f1": 7.9470198675496695,
+      "dev_macro_f1_mean_of_folds": 28.658116727183405,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "wavlm-large layers 1-4",
+      "role": "candidate",
+      "dim": 1024,
+      "oof_train_macro_f1": 21.964861900806614,
+      "oof_train_weighted_f1": 38.12127086502352,
+      "oof_fear_f1": 6.430868167202572,
+      "oof_disgust_f1": 2.8169014084507045,
+      "dev_macro_f1_mean_of_folds": 23.301493227239355,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "wavlm-large layers 5-8",
+      "role": "candidate",
+      "dim": 1024,
+      "oof_train_macro_f1": 23.74988053216621,
+      "oof_train_weighted_f1": 39.96004969105954,
+      "oof_fear_f1": 6.176470588235294,
+      "oof_disgust_f1": 6.20384047267356,
+      "dev_macro_f1_mean_of_folds": 25.00729309931905,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "wavlm-large layers 9-12",
+      "role": "candidate",
+      "dim": 1024,
+      "oof_train_macro_f1": 24.689642661749915,
+      "oof_train_weighted_f1": 41.270629518029,
+      "oof_fear_f1": 3.927492447129909,
+      "oof_disgust_f1": 7.3506891271056665,
+      "dev_macro_f1_mean_of_folds": 27.136497648856135,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "wavlm-large layers 13-16",
+      "role": "candidate",
+      "dim": 1024,
+      "oof_train_macro_f1": 25.65339999632834,
+      "oof_train_weighted_f1": 41.99758416071141,
+      "oof_fear_f1": 8.1203007518797,
+      "oof_disgust_f1": 5.4399999999999995,
+      "dev_macro_f1_mean_of_folds": 28.767321322356093,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "wavlm-large layers 17-20",
+      "role": "candidate",
+      "dim": 1024,
+      "oof_train_macro_f1": 26.803807877435194,
+      "oof_train_weighted_f1": 43.38513683033606,
+      "oof_fear_f1": 7.71513353115727,
+      "oof_disgust_f1": 4.702194357366771,
+      "dev_macro_f1_mean_of_folds": 29.046828514628732,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "wavlm-large layers 21-24",
+      "role": "candidate",
+      "dim": 1024,
+      "oof_train_macro_f1": 25.954752034913138,
+      "oof_train_weighted_f1": 42.70445620544937,
+      "oof_fear_f1": 5.529953917050691,
+      "oof_disgust_f1": 6.656101426307448,
+      "dev_macro_f1_mean_of_folds": 29.233487151838297,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "openSMILE (original audio input)",
+      "role": "reference",
+      "dim": 300,
+      "oof_train_macro_f1": 29.462974360340173,
+      "oof_train_weighted_f1": 46.58185301439062,
+      "oof_fear_f1": 12.865497076023392,
+      "oof_disgust_f1": 9.00900900900901,
+      "dev_macro_f1_mean_of_folds": 22.52244491412363,
+      "hit_max_iter": false
+    },
+    {
+      "feature": "sroberta1 (original event input)",
+      "role": "reference",
+      "dim": 1024,
+      "oof_train_macro_f1": 36.82899657442122,
+      "oof_train_weighted_f1": 55.610898771892955,
+      "oof_fear_f1": 11.194029850746269,
+      "oof_disgust_f1": 14.772727272727273,
+      "dev_macro_f1_mean_of_folds": 36.89190622446307,
+      "hit_max_iter": true
+    },
+    {
+      "feature": "bge-large-en-v1.5 (event input of A3)",
+      "role": "reference",
+      "dim": 1024,
+      "oof_train_macro_f1": 36.03169087144216,
+      "oof_train_weighted_f1": 54.02646726759457,
+      "oof_fear_f1": 12.5,
+      "oof_disgust_f1": 15.686274509803921,
+      "dev_macro_f1_mean_of_folds": 36.74604918500584,
+      "hit_max_iter": false
+    }
+  ],
+  "train_utterances_probed": 9987,
+  "feature_sha256": {
+    "audio": "2d65422abff8d8e47b6dc8437eef3aca7b269ea3e298b214c430723b80e14781",
+    "event": "ea59dfc3bba27806c7873ccdd121f97d4c569ede7bd3b0acc4bbfa921768044a"
+  },
+  "arm_input_widths": {
+    "A0_original": {
+      "d_a": 300,
+      "d_v": 342
+    },
+    "A1_routing_fixed": {
+      "d_a": 300,
+      "d_v": 342
+    },
+    "A2_ssl_audio": {
+      "d_a": 1280,
+      "d_v": 342
+    },
+    "A3_ssl_audio_bge_event": {
+      "d_a": 1280,
+      "d_v": 342
+    }
+  }
+}

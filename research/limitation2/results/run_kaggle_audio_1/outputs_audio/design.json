@@ -1,0 +1,133 @@
+{
+  "arms": [
+    {
+      "name": "A0_original",
+      "routing": "original",
+      "audio": "opensmile",
+      "event": "sroberta1"
+    },
+    {
+      "name": "A1_routing_fixed",
+      "routing": "fixed",
+      "audio": "opensmile",
+      "event": "sroberta1"
+    },
+    {
+      "name": "A2_ssl_audio",
+      "routing": "fixed",
+      "audio": "ssl",
+      "event": "sroberta1"
+    },
+    {
+      "name": "A3_ssl_audio_bge_event",
+      "routing": "fixed",
+      "audio": "ssl",
+      "event": "bge"
+    }
+  ],
+  "audio_dataset": {
+    "repo": "ajyy/MELD_audio",
+    "revision": "90175e5207b0f1fb6f3742b3d9036b0fda509086",
+    "license": "gpl-3.0",
+    "sha256": {
+      "train.csv": "4e3907e95e7ad4fd413a5a58d807dee79ebdb0c16b050cd33c3a3ac35ddb9ebf",
+      "dev.csv": "7e306369c2d1625b063132310aa30bc6979fcf0f51c783e903edfcaa1c98b15c",
+      "test.csv": "2d3fdb6586bdcdf172a7197fae9244116b1103efd951db2317e6a67c7042d28e",
+      "archive/train.tar.gz": "ddf650657ed9232b27bd4789adcfc504156df3f87d4b6073c37de637b9f97aa9",
+      "archive/dev.tar.gz": "1b04cc9368d66a24442666eaa32a8c2da19332fd769c9b1aa02258a605748678",
+      "archive/test.tar.gz": "aef4ba7ea47a9c2b7653db869fcbc677cb50e795f46ec1e00077a3214de1ee66"
+    }
+  },
+  "audio_encoders": [
+    {
+      "name": "whisper-large-v3",
+      "repo": "openai/whisper-large-v3",
+      "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1",
+      "kind": "whisper",
+      "batch": 8
+    },
+    {
+      "name": "wavlm-large",
+      "repo": "microsoft/wavlm-large",
+      "revision": "c1423ed94bb01d80a3f5ce5bc39f6026a0f4828c",
+      "kind": "wavlm",
+      "batch": 1
+    }
+  ],
+  "text_encoder": {
+    "name": "bge-large-en-v1.5",
+    "repo": "BAAI/bge-large-en-v1.5",
+    "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+    "max_len": 128,
+    "batch": 64
+  },
+  "layer_band": 4,
+  "audio_limits": {
+    "max_seconds": 30.0,
+    "min_samples": 1600
+  },
+  "alignment_rule": "data-file dialogue key = MELD Dialogue_ID + a per-split offset, taken from the dialogues whose normalised utterance text matches exactly (>= 95% required); every dialogue must have the same number of utterances; utterance i <-> the i-th CSV row by Utterance_ID; normalised text must agree for >= min_text_agreement of the utterances; train/dev CSV labels must equal the data-file labels. Utterances whose text disagrees or whose clip is missing get no audio (the training mean).",
+  "max_missing_audio": 20,
+  "min_text_agreement": 0.99,
+  "feature_standardisation": "training-utterance mean and SD per dimension (new features only)",
+  "selection": {
+    "rule": "highest out-of-fold train macro-F1; ties to the earlier candidate",
+    "probe": "the feature-leak check's: standardised features, logistic regression",
+    "C": 1.0,
+    "max_iter": 1000,
+    "folds": 5,
+    "fold_seed": 2026
+  },
+  "epochs": 40,
+  "stage1_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105
+  ],
+  "stage2_seeds": [
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220
+  ],
+  "gate_min_gain": 0.5,
+  "test_looks": 3,
+  "criteria": {
+    "primary": "mean over stage-2 seeds of test macro-F1(winner) - macro-F1(A0), paired by seed, in points",
+    "success": [
+      "delta >= +1.0",
+      "hierarchical-bootstrap 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of seeds",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  }
+}

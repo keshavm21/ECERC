@@ -168,6 +168,6 @@ The follow-up experiments in [`report.md` §8](report.md#8-follow-up-experiments
 | 3. Representation changes (Path B) | `ECERC_L2_pathB_representation.ipynb` | Kaggle, GPU T4 x2 | 1.5–2.5 h |
 | 4. Text expert fusion | `ECERC_L2_expert_fusion.ipynb` | Kaggle, GPU | 1.5–2 h |
 | 5. LLM expert fusion | `ECERC_L2_llm_fusion.ipynb` | Kaggle, GPU T4 x2 | 3–6 h |
-| 6. Self-supervised audio evidence (pre-registered, not yet run) | `ECERC_L2_audio_evidence.ipynb` | Kaggle, GPU T4, Internet on | 2.5–3.5 h (estimate) |
+| 6. Self-supervised audio evidence | `ECERC_L2_audio_evidence.ipynb` | Kaggle, GPU T4, Internet on | 1 h 48 min (stopped at the dev gate); 2.5–3.5 h if Stage 2 runs |
 
 Step-by-step instructions, troubleshooting and the local CPU smoke tests are in [`../research/limitation2/README.md`](../research/limitation2/README.md). Each experiment evaluates the test set at most once, after its decisions are frozen; re-running one is a new test look and should be reported as such.

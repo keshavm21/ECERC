@@ -224,3 +224,76 @@ been evaluated only twice (experiments 1 and 4).
    26.1 → 29.5), and its overall macro-F1 gain was not established (+0.27, CI −1.9 to +2.3). Within this setup,
    on MELD's test set, Limitation 2 is robust to decision-level, objective-level, training-level and
    ensemble-level interventions.
+
+---
+
+# Findings: run_kaggle_audio_1 (Experiment 6, self-supervised audio evidence)
+
+**Run:** 2026-10-18, Kaggle Tesla T4, 1 hour 48 minutes. Feature extraction took 62 minutes (Whisper-large-v3 41,
+WavLM-large 20.5, bge 0.3), the probes 18 and the dev screen 27. Outputs are in `run_kaggle_audio_1/outputs_audio/`.
+
+**Integrity:**
+- All 35 checks passed, with no warnings.
+  - The data file and the six audio files match their pinned SHA-256.
+  - The alignment rule held for every split: offsets 0 / 1039 / 1153; 1035/1038, 114/114 and 280/280 dialogues
+    matched exactly; text agreement 99.99 / 100 / 100%; no train or dev label differs.
+  - Three utterances have no usable audio (training mean used): train dia125_utt3 and dev dia110_utt7 (no clip), and
+    train dia556_utt6 (MELD's CSV text and clip belong to a different line).
+  - All features are finite. Our evaluation loop reproduces the original `train_or_eval_model` exactly, for both the
+    original and the new input layout.
+- **A0 reproduces Path B's C0 exactly** on the shared seeds (55.12, 54.04, 53.21), so this run and Path B are directly
+  comparable.
+- The test set was not touched; it has still been evaluated only twice (experiments 1 and 4).
+
+## Verdict: the gate stopped the run after Stage 1
+The best arm beat the original recipe by +0.08 dev macro-F1, against a pre-registered gate of +0.5. Stage 2 and the
+test evaluation were skipped.
+
+**Feature selection (training split only).** The selected speech features are Whisper-large-v3 layers 29–32. Linear
+probe, audio only (macro-F1):
+
+| Features | Out-of-fold train | Dev (mean of fold models) |
+|---|---|---|
+| Whisper-large-v3, layers 29–32 (selected) | 27.82 | 28.66 |
+| WavLM-large, layers 17–20 (its best out-of-fold band) | 26.80 | 29.05 |
+| openSMILE (original audio input) | 29.46 | 22.52 |
+| `sroberta1` (original event input) | 36.83 | 36.89 |
+| bge-large-en-v1.5 (A3's event input) | 36.03 | 36.75 |
+
+The probes of Whisper layers 1–24 and of `sroberta1` reached the pre-registered 1000-iteration cap; the selected band
+did not.
+
+**Stage 1 (dev, 5 seeds per arm; each run at its best-dev-macro-F1 epoch):**
+
+| Arm | Dev macro-F1 (SD) | vs A0 | Weighted F1 | Fear F1 | Disgust F1 | Sadness F1 | Joy F1 |
+|---|---|---|---|---|---|---|---|
+| A0 original | 54.13 (0.84) | 0.00 | 66.15 | 33.80 | 34.84 | 43.73 | 62.99 |
+| A1 routing fixed | 54.09 (0.56) | −0.04 | 65.90 | 33.40 | 36.84 | 44.13 | 63.05 |
+| A2 + speech features | 54.11 (1.10) | −0.02 | 65.89 | 32.81 | 36.57 | 45.94 | 60.56 |
+| A3 + bge event input | 54.21 (1.33) | +0.08 | 66.15 | 32.01 | 35.98 | 46.28 | 61.57 |
+
+Mean over the last five epochs, a measure that does not pick a lucky epoch: A0 53.42, A1 53.23, A2 53.39, A3 53.37.
+
+## Interpretation
+1. **The audio/visual routing defect is harmless.** A1 and A0 share their initialisation and data order exactly, so
+   their paired difference isolates the routing: −0.04 dev macro-F1 (SD 0.41 across seeds). The original loader's
+   slot order is not a cause of Limitation 2.
+2. **The new speech features are better audio evidence on their own.**
+   - Their dev probes score 28.7 (the selected Whisper band) and up to 29.2 (WavLM), against 22.5 for openSMILE.
+   - They show no train-side advantage: out-of-fold train and dev agree. openSMILE shows the same +7 gap as in
+     experiment 2 (29.5 train against 22.5 dev).
+3. **ECERC does not gain from them.**
+   - A2 differs from A0 by −0.02 dev macro-F1 (paired SD 1.79, higher in 3 of 5 seeds).
+   - The class changes trade against each other. Sadness F1 rises in all 5 seeds (+2.21 on average), Joy falls in 4
+     of 5 (−2.43), and Fear and Disgust move within seed noise (dev has 40 Fear and 22 Disgust items).
+   - On top of ECERC's text evidence, the better audio shifts the boundaries between related classes rather than
+     separating them. This agrees with MELD being text-dominant (MERBench) and with the small audio gain reported for
+     TelME (+0.62 weighted F1). MiSTER-E's +2.0 did not carry over. That is a single-run figure from a different
+     architecture with bidirectional context, and the paper does not say whether those encoders were frozen.
+4. **A new event encoder adds nothing.** As a linear-probe feature, bge-large is no better than plain RoBERTa (36.0
+   against 36.8 out of fold). A3's +0.10 over A2 is within seed noise, and it vanishes on the last-five-epoch measure.
+5. **Across the six follow-ups:** ECERC's rare-emotion ceiling is unchanged by the decision rule (1), the training
+   objective and optimiser (3), fusion with text and LLM experts (4, 5) and, now, by much better audio evidence and
+   correct modality routing (6). The same direction of class trading appeared with new text evidence on test in
+   experiment 4 (Sadness +2.23, Joy −2.61). What remains points to the text evidence and the labels themselves:
+   overlap between related emotions and annotator agreement κ = 0.43.

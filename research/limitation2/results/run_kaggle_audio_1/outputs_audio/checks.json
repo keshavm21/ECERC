@@ -1,0 +1,212 @@
+[
+  {
+    "name": "data file is identical to the one used in run_colab_1",
+    "passed": true,
+    "hard": false,
+    "detail": "a0349614b2b58e8b"
+  },
+  {
+    "name": "data file has the 17 fields read by MELD/dataloader.py",
+    "passed": true,
+    "hard": true,
+    "detail": "type=list"
+  },
+  {
+    "name": "dialogue IDs are disjoint across splits",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "utterance counts per split match MELD",
+    "passed": true,
+    "hard": false,
+    "detail": "{'train': 9989, 'valid': 1109, 'test': 2610}"
+  },
+  {
+    "name": "dialogue counts per split match MELD",
+    "passed": true,
+    "hard": false,
+    "detail": "{'train': 1038, 'valid': 114, 'test': 280}"
+  },
+  {
+    "name": "feature dimensions fit the released model (text 1024, audio+visual 642, 9 speakers)",
+    "passed": true,
+    "hard": true,
+    "detail": "{'eroberta1': 1024, 'sroberta1': 1024, 'videoVisual': 342, 'videoAudio': 300, 'speakers': 9}"
+  },
+  {
+    "name": "train/dev labels are in 0..6",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train/dev label lengths match feature lengths",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train label counts match the MELD paper",
+    "passed": true,
+    "hard": false,
+    "detail": "[4710, 1205, 268, 683, 1743, 271, 1109]"
+  },
+  {
+    "name": "utterance text is present for every utterance (label-free check)",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train.csv: SHA-256 matches the pinned release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "archive/train.tar.gz: SHA-256 matches the pinned release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "dev.csv: SHA-256 matches the pinned release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "archive/dev.tar.gz: SHA-256 matches the pinned release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "test.csv: SHA-256 matches the pinned release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "archive/test.tar.gz: SHA-256 matches the pinned release",
+    "passed": true,
+    "hard": true,
+    "detail": "downloaded"
+  },
+  {
+    "name": "train: data-file key = MELD Dialogue_ID + 0 (from the exactly matching dialogues)",
+    "passed": true,
+    "hard": true,
+    "detail": "1035/1038 dialogues match exactly"
+  },
+  {
+    "name": "train: every dialogue has a MELD counterpart with the same number of utterances",
+    "passed": true,
+    "hard": true,
+    "detail": "0 mismatched: []"
+  },
+  {
+    "name": "train: utterance text agrees with the MELD CSV",
+    "passed": true,
+    "hard": true,
+    "detail": "99.99% (1 differ)"
+  },
+  {
+    "name": "train: MELD CSV labels equal the data-file labels",
+    "passed": true,
+    "hard": true,
+    "detail": "0 differ"
+  },
+  {
+    "name": "valid: data-file key = MELD Dialogue_ID + 1039 (from the exactly matching dialogues)",
+    "passed": true,
+    "hard": true,
+    "detail": "114/114 dialogues match exactly"
+  },
+  {
+    "name": "valid: every dialogue has a MELD counterpart with the same number of utterances",
+    "passed": true,
+    "hard": true,
+    "detail": "0 mismatched: []"
+  },
+  {
+    "name": "valid: utterance text agrees with the MELD CSV",
+    "passed": true,
+    "hard": true,
+    "detail": "100.00% (0 differ)"
+  },
+  {
+    "name": "valid: MELD CSV labels equal the data-file labels",
+    "passed": true,
+    "hard": true,
+    "detail": "0 differ"
+  },
+  {
+    "name": "test: data-file key = MELD Dialogue_ID + 1153 (from the exactly matching dialogues)",
+    "passed": true,
+    "hard": true,
+    "detail": "280/280 dialogues match exactly"
+  },
+  {
+    "name": "test: every dialogue has a MELD counterpart with the same number of utterances",
+    "passed": true,
+    "hard": true,
+    "detail": "0 mismatched: []"
+  },
+  {
+    "name": "test: utterance text agrees with the MELD CSV",
+    "passed": true,
+    "hard": true,
+    "detail": "100.00% (0 differ)"
+  },
+  {
+    "name": "every utterance of the data file is aligned",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "utterances without usable audio <= 20",
+    "passed": true,
+    "hard": true,
+    "detail": "3: train dia125_utt3 (no clip), train dia556_utt6 (text differs), valid dia110_utt7 (no clip)"
+  },
+  {
+    "name": "whisper-large-v3: features are finite for every clip",
+    "passed": true,
+    "hard": true,
+    "detail": "shape (13708, 33, 1280), fp32 retries 0, non-finite batches 0"
+  },
+  {
+    "name": "wavlm-large: features are finite for every clip",
+    "passed": true,
+    "hard": true,
+    "detail": "shape (13708, 25, 1024), fp32 retries 0, non-finite batches 0"
+  },
+  {
+    "name": "bge-large-en-v1.5: 1024-d output, the width of the event input it replaces",
+    "passed": true,
+    "hard": true,
+    "detail": "1024"
+  },
+  {
+    "name": "A0_original: evaluation loop reproduces the original train_or_eval_model on dev",
+    "passed": true,
+    "hard": true,
+    "detail": "sum |confusion diff| = 0"
+  },
+  {
+    "name": "A2_ssl_audio: evaluation loop reproduces the original train_or_eval_model on dev",
+    "passed": true,
+    "hard": true,
+    "detail": "sum |confusion diff| = 0"
+  },
+  {
+    "name": "A0 reproduces Path B's C0 on dev for the shared seeds (same code path; library versions may differ)",
+    "passed": true,
+    "hard": false,
+    "detail": "seed 101: 55.12 vs 55.12, seed 102: 54.04 vs 54.04, seed 103: 53.21 vs 53.21"
+  }
+]

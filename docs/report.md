@@ -36,7 +36,7 @@ Several variants looked slightly better than B0 on validation, but none of those
 
 The evidence points to overlap between related emotions in the input features and the data, rather than to the decision rule, the loss or the training budget.
 
-A sixth follow-up, pre-registered on 2026-10-18 and **not yet run**, tests the input-feature explanation directly: it retrains the unchanged ECERC on frozen self-supervised speech features in place of its openSMILE audio (§8.7).
+A sixth follow-up tested the input-feature explanation directly (§8.7). It retrained the unchanged ECERC on frozen self-supervised speech features in place of its openSMILE audio, and also corrected the audio/visual input routing. The new audio features are much stronger on their own, but no variant moved dev macro-F1 (best +0.08, against a +0.5 gate), so the test set was not used.
 
 ---
 
@@ -387,8 +387,8 @@ Code, protocol and raw outputs: [`research/limitation2/`](../research/limitation
 
 These experiments differ from Stages 0–2 in three ways:
 
-- **Models.** Experiments 1, 2, 4 and 5 use the **three released checkpoints** (C1 = `ECERC_MODEL.pkl` = R0, C2, C3), not the B0 retrainings. Experiment 3 retrains ECERC with its own seeds.
-- **Selection.** Stages 0–2 select each run's epoch by validation weighted F1. Experiment 3 selects by validation macro-F1, and Experiments 1, 4 and 5 choose their single tuning parameter by mean dev macro-F1.
+- **Models.** Experiments 1, 2, 4 and 5 use the **three released checkpoints** (C1 = `ECERC_MODEL.pkl` = R0, C2, C3), not the B0 retrainings. Experiments 3 and 6 retrain ECERC with their own seeds.
+- **Selection.** Stages 0–2 select each run's epoch by validation weighted F1. Experiments 3 and 6 select by validation macro-F1, and Experiments 1, 4 and 5 choose their single tuning parameter by mean dev macro-F1.
 - **Statistics.** Confidence intervals come from dialogue-level bootstrap, so they cover test-sampling noise (and, where stated, re-selection on dev).
 
 | # | Experiment | Test used? | Verdict |
@@ -398,7 +398,7 @@ These experiments differ from Stages 0–2 in three ways:
 | 3 | Training-time representation changes | no (dev gate) | no candidate passed the gate |
 | 4 | RoBERTa-large text expert fused with ECERC | yes | INCONCLUSIVE |
 | 5 | Qwen2.5-7B LLM expert fused with ECERC | no (dev gate) | gate not passed |
-| 6 | Self-supervised audio evidence for ECERC (§8.7) | — | pending: pre-registered, not yet run |
+| 6 | Self-supervised audio evidence for ECERC | no (dev gate) | gate not passed |
 
 ### 8.1 Experiment 1: post-hoc logit adjustment
 
@@ -466,9 +466,9 @@ On dev, the LLM alone matches or exceeds the released checkpoints on accuracy (6
 - **Not a threshold problem.** Neither reweighting during training (§6) nor shifting the decision rule after training (§8.1) raises minority F1: in both, the extra minority predictions are mostly wrong.
 - **Not the objective, optimizer or a label leak.** Representation-level losses and a higher learning rate did not move dev macro-F1 beyond seed noise (§8.3), and the leak hypothesis was rejected (§8.2).
 - **The limit is the evidence.** The minority classes overlap with related emotions (Fear with Surprise/Sadness/Anger, Disgust with Anger) in ECERC's input features. Among the follow-ups, only a second model reading the raw text raised a minority-class F1 on test by more than a fraction of a point (Fear +3.4), and its overall gain was not established.
-- **Test-set use.** Across the five follow-ups, the MELD test set was evaluated twice (Experiments 1 and 4).
+- **Test-set use.** Across the five follow-ups, the MELD test set was evaluated twice (Experiments 1 and 4). Experiment 6 (§8.7) did not use it either.
 
-### 8.7 Experiment 6 (pre-registered, not yet run): self-supervised audio evidence
+### 8.7 Experiment 6: self-supervised audio evidence
 
 §8.6 locates the limit in ECERC's input evidence, and the audio stream is its weakest part:
 
@@ -482,7 +482,33 @@ Experiment 6 keeps ECERC's architecture, loss, optimizer and schedule unchanged 
 - **Arms.** A0 is the original recipe. A1 fixes the slot routing. A2 adds the new speech features. A3 additionally replaces the event input with bge-large-en-v1.5 sentence embeddings.
 - **Protocol.** A 5-seed dev screen with a +0.5 gate is followed by a 20-seed paired confirmation against A0. The test set is evaluated once, and this would be its third look.
 
-The full rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-18), and the notebook is `research/limitation2/notebooks/ECERC_L2_audio_evidence.ipynb`. This section will be replaced by the results once the run is done.
+The full rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-18), and the notebook is `research/limitation2/notebooks/ECERC_L2_audio_evidence.ipynb`.
+
+**Run.** Kaggle T4, 2026-10-18, 1 h 48 min. All 35 integrity checks passed:
+
+- Three utterances have no usable audio.
+- A0 reproduced Path B's original recipe exactly on the shared seeds (dev macro-F1 55.12, 54.04 and 53.21).
+
+The selected speech features are Whisper-large-v3 layers 29–32. On dev, a linear probe on them scores 28.7 macro-F1, against 22.5 for openSMILE. Unlike openSMILE, they show no train-side advantage.
+
+| Dev, 5 seeds per arm | Macro-F1 (SD) | vs A0 | Weighted F1 | Fear F1 | Disgust F1 | Sadness F1 | Joy F1 |
+|---|---|---|---|---|---|---|---|
+| A0 original recipe | 54.13 (0.84) | 0.00 | 66.15 | 33.80 | 34.84 | 43.73 | 62.99 |
+| A1 routing fixed | 54.09 (0.56) | −0.04 | 65.90 | 33.40 | 36.84 | 44.13 | 63.05 |
+| A2 + speech features | 54.11 (1.10) | −0.02 | 65.89 | 32.81 | 36.57 | 45.94 | 60.56 |
+| A3 + bge event input | 54.21 (1.33) | +0.08 | 66.15 | 32.01 | 35.98 | 46.28 | 61.57 |
+
+The best arm gained +0.08 against a +0.5 gate, so **the test set was not used**. Averaged over the last five epochs instead of each run's best epoch, all four arms are within 0.2 points (53.23 to 53.42).
+
+- **The routing defect is harmless.** A1 and A0 share initialisation and data order, and differ by −0.04.
+- **Better audio does not help ECERC.** Inside the model, the new features trade classes:
+  - dev Sadness F1 rises in all five seeds (+2.2 on average);
+  - Joy F1 falls in four of five (−2.4);
+  - Fear and Disgust move within seed noise.
+
+  Experiment 4's text expert showed the same direction on test (Sadness +2.2, Joy −2.6). On MELD the text evidence dominates, and better non-text evidence shifts the boundaries between related emotions rather than separating them.
+
+Per-run details are in [`FINDINGS.md`](../research/limitation2/results/FINDINGS.md).
 
 ## 9. Limitations of this study
 
@@ -498,7 +524,7 @@ The full rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (adde
 
 Two of the follow-ups proposed in the first version of this report were carried out in §8: post-hoc per-class decision-rule changes (Experiment 1) and representation-level methods, including a confusion-aware contrastive term on the fused features (Experiment 3). Neither helped. Still open:
 
-- **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points. Experiment 6 (§8.7, pre-registered) tests stronger audio features inside ECERC itself.
+- **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points. Much stronger audio features inside ECERC itself did not help either (Experiment 6, §8.7); what remains points to the text evidence and the labels.
 - **Decoupled classifier re-training** (e.g. cRT) and **more seeds** per configuration, which were not tried.
 - **Label ambiguity.** How much of the minority-class error comes from MELD's annotation disagreement was not measured.
 

@@ -1,8 +1,7 @@
 # Limitation 2 (class imbalance): follow-up experiments on MELD
 
 This folder holds six pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
-study in [`docs/report.md`](../../docs/report.md). Experiments 1–5 are done; Experiment 6 was pre-registered on
-2026-10-18 and has not been run yet. Nothing outside `research/limitation2/` was changed. The
+study in [`docs/report.md`](../../docs/report.md). Nothing outside `research/limitation2/` was changed. The
 original code in `MELD/` and `IEMOCAP/` is untouched; the four files this work needs were copied verbatim into
 `ecerc_original/` (their SHA-256 hashes match the originals, see `MANIFEST.json`).
 
@@ -10,8 +9,9 @@ Each experiment's rules, success criteria and gate were written into [PROTOCOL.m
 Every decision is made on train/dev only and frozen to a JSON file before the test set is touched; the test set
 is then evaluated at most once per experiment. Full write-ups are in
 [`results/FINDINGS.md`](results/FINDINGS.md) (per-run findings) and
-[`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on all five experiments: the
+[`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on experiments 1–5: the
 audit of the released code, each experiment, why it happened, possible improvements and limitations).
+Experiment 6 is written up in `FINDINGS.md` only.
 
 ## Results at a glance
 
@@ -22,13 +22,12 @@ audit of the released code, each experiment, why it happened, possible improveme
 | 3 | Path B: training-time representation changes (RoBERTa layer mean, confusion-aware contrastive loss, sentiment head, higher lr) | Kaggle T4 | no (dev gate not passed) | No candidate beat the original recipe by 0.5 dev macro-F1 (best +0.19) |
 | 4 | Context-aware RoBERTa-large text expert, fused with ECERC by a dev-chosen weight | Kaggle T4 | yes | **INCONCLUSIVE**: Δ macro-F1 +0.27 [−1.92, +2.29]; Fear F1 26.1 → 29.5, but Disgust and Joy fell |
 | 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
-| 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed, unchanged ECERC retrained (20 paired seeds) | Kaggle T4 | — | **Pending**: pre-registered 2026-10-18, not yet run |
+| 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed (and a bge event-input arm), unchanged ECERC retrained | Kaggle T4 | no (dev gate not passed) | All four arms within 0.1 dev macro-F1 (best +0.08); the better audio trades Sadness (+2.2) against Joy (−2.4) |
 
 Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
-label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), and only
-partly helped by a second model reading the raw text (4, 5). The MELD test set was evaluated twice in total
-(experiments 1 and 4). Experiment 6 tests the remaining lead directly: it keeps ECERC and its recipe unchanged and
-replaces its weakest input, the audio features, with stronger frozen ones.
+label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), only
+partly helped by a second model reading the raw text (4, 5), and not fixed by much better audio features or by
+correcting the audio/visual routing (6). The MELD test set was evaluated twice in total (experiments 1 and 4).
 
 ## Folder layout
 
@@ -39,7 +38,7 @@ replaces its weakest input, the audio features, with stronger frozen ones.
 | `notebooks/ECERC_L2_pathB_representation.ipynb` | Experiment 3 (done): training-time representation changes |
 | `notebooks/ECERC_L2_expert_fusion.ipynb` | Experiment 4 (done): context-aware text expert fused with ECERC |
 | `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
-| `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (pending): self-supervised audio features for ECERC |
+| `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (done): self-supervised audio features for ECERC |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
@@ -59,7 +58,7 @@ replaces its weakest input, the audio features, with stronger frozen ones.
 The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
 and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
 
-### Experiment 6: audio evidence on Kaggle (about 2.5 to 3.5 hours on a T4, runs in the background)
+### Experiment 6: audio evidence on Kaggle (2.5 to 3.5 hours on a T4 if Stage 2 runs; the recorded run stopped at the gate after 1 h 48 min)
 
 Same steps as Experiment 3 below, with two differences: import
 `research/limitation2/notebooks/ECERC_L2_audio_evidence.ipynb`, and download

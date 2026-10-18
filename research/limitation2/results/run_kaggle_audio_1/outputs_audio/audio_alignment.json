@@ -1,0 +1,90 @@
+{
+  "dataset": "ajyy/MELD_audio",
+  "revision": "90175e5207b0f1fb6f3742b3d9036b0fda509086",
+  "files": {
+    "train.csv": {
+      "sha256": "4e3907e95e7ad4fd413a5a58d807dee79ebdb0c16b050cd33c3a3ac35ddb9ebf"
+    },
+    "archive/train.tar.gz": {
+      "sha256": "ddf650657ed9232b27bd4789adcfc504156df3f87d4b6073c37de637b9f97aa9"
+    },
+    "dev.csv": {
+      "sha256": "7e306369c2d1625b063132310aa30bc6979fcf0f51c783e903edfcaa1c98b15c"
+    },
+    "archive/dev.tar.gz": {
+      "sha256": "1b04cc9368d66a24442666eaa32a8c2da19332fd769c9b1aa02258a605748678"
+    },
+    "test.csv": {
+      "sha256": "2d3fdb6586bdcdf172a7197fae9244116b1103efd951db2317e6a67c7042d28e"
+    },
+    "archive/test.tar.gz": {
+      "sha256": "aef4ba7ea47a9c2b7653db869fcbc677cb50e795f46ec1e00077a3214de1ee66"
+    }
+  },
+  "rule": "data-file dialogue key = MELD Dialogue_ID + a per-split offset, taken from the dialogues whose normalised utterance text matches exactly (>= 95% required); every dialogue must have the same number of utterances; utterance i <-> the i-th CSV row by Utterance_ID; normalised text must agree for >= min_text_agreement of the utterances; train/dev CSV labels must equal the data-file labels. Utterances whose text disagrees or whose clip is missing get no audio (the training mean).",
+  "splits": {
+    "train": {
+      "offset": 0,
+      "exact_dialogues": 1035,
+      "dialogues": 1038,
+      "utterances": 9989,
+      "text_mismatches": [
+        {
+          "key": 556,
+          "position": 6,
+          "dialogue_id": 556,
+          "utterance_id": 6
+        }
+      ],
+      "clips_used": 9987,
+      "clips_missing": 1,
+      "archive_clips_not_needed": 0
+    },
+    "valid": {
+      "offset": 1039,
+      "exact_dialogues": 114,
+      "dialogues": 114,
+      "utterances": 1109,
+      "text_mismatches": [],
+      "clips_used": 1108,
+      "clips_missing": 1,
+      "archive_clips_not_needed": 4
+    },
+    "test": {
+      "offset": 1153,
+      "exact_dialogues": 280,
+      "dialogues": 280,
+      "utterances": 2610,
+      "text_mismatches": [],
+      "clips_used": 2610,
+      "clips_missing": 0,
+      "archive_clips_not_needed": 5
+    }
+  },
+  "no_audio": [
+    {
+      "split": "train",
+      "key": 125,
+      "position": 3,
+      "dialogue_id": 125,
+      "utterance_id": 3,
+      "reason": "no clip"
+    },
+    {
+      "split": "train",
+      "key": 556,
+      "position": 6,
+      "dialogue_id": 556,
+      "utterance_id": 6,
+      "reason": "text differs"
+    },
+    {
+      "split": "valid",
+      "key": 1149,
+      "position": 7,
+      "dialogue_id": 110,
+      "utterance_id": 7,
+      "reason": "no clip"
+    }
+  ]
+}

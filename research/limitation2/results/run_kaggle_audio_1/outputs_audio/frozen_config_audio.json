@@ -1,0 +1,177 @@
+{
+  "created": "2026-10-18 07:51:49",
+  "note": "Written before any test-set access. Stage 2 and the test evaluation read their rules from here.",
+  "code_sha256": {
+    "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+    "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+    "l2_audio.py": "e3a3f04cea0debbc3ce9f32e719e4781725353518aa18f9a3c4d5e2cc5c7c814",
+    "l2_feature_leak.py": "a4dfa08870004beb9ef11d2ee1498ff71c42181f9c0da69ee66129265bf60406",
+    "l2_pathb.py": "74e6ec8a9755ab8bd58fbc1586521f0ee7a4708c222632d7b90cbc0f6842e63e",
+    "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+    "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+    "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+  },
+  "data_sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80",
+  "audio_dataset": {
+    "repo": "ajyy/MELD_audio",
+    "revision": "90175e5207b0f1fb6f3742b3d9036b0fda509086",
+    "files": {
+      "train.csv": {
+        "sha256": "4e3907e95e7ad4fd413a5a58d807dee79ebdb0c16b050cd33c3a3ac35ddb9ebf"
+      },
+      "archive/train.tar.gz": {
+        "sha256": "ddf650657ed9232b27bd4789adcfc504156df3f87d4b6073c37de637b9f97aa9"
+      },
+      "dev.csv": {
+        "sha256": "7e306369c2d1625b063132310aa30bc6979fcf0f51c783e903edfcaa1c98b15c"
+      },
+      "archive/dev.tar.gz": {
+        "sha256": "1b04cc9368d66a24442666eaa32a8c2da19332fd769c9b1aa02258a605748678"
+      },
+      "test.csv": {
+        "sha256": "2d3fdb6586bdcdf172a7197fae9244116b1103efd951db2317e6a67c7042d28e"
+      },
+      "archive/test.tar.gz": {
+        "sha256": "aef4ba7ea47a9c2b7653db869fcbc677cb50e795f46ec1e00077a3214de1ee66"
+      }
+    }
+  },
+  "encoders": {
+    "audio": [
+      {
+        "name": "whisper-large-v3",
+        "repo": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1",
+        "kind": "whisper",
+        "batch": 8
+      },
+      {
+        "name": "wavlm-large",
+        "repo": "microsoft/wavlm-large",
+        "revision": "c1423ed94bb01d80a3f5ce5bc39f6026a0f4828c",
+        "kind": "wavlm",
+        "batch": 1
+      }
+    ],
+    "text": {
+      "name": "bge-large-en-v1.5",
+      "repo": "BAAI/bge-large-en-v1.5",
+      "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+      "max_len": 128,
+      "batch": 64
+    }
+  },
+  "selected_audio": {
+    "name": "whisper-large-v3 layers 29-32",
+    "encoder": "whisper-large-v3",
+    "layers": [
+      29,
+      32
+    ],
+    "oof_train_macro_f1": 27.821155555628046
+  },
+  "feature_sha256": {
+    "audio": "2d65422abff8d8e47b6dc8437eef3aca7b269ea3e298b214c430723b80e14781",
+    "event": "ea59dfc3bba27806c7873ccdd121f97d4c569ede7bd3b0acc4bbfa921768044a"
+  },
+  "control": {
+    "name": "A0_original",
+    "routing": "original",
+    "audio": "opensmile",
+    "event": "sroberta1"
+  },
+  "winner": {
+    "name": "A3_ssl_audio_bge_event",
+    "routing": "fixed",
+    "audio": "ssl",
+    "event": "bge"
+  },
+  "stage1_mean_dev_macro_f1": {
+    "A0_original": 54.12718466905367,
+    "A1_routing_fixed": 54.08854782893832,
+    "A2_ssl_audio": 54.111542071298004,
+    "A3_ssl_audio_bge_event": 54.20542943929458
+  },
+  "gate": {
+    "gain": 0.07824477024091436,
+    "threshold": 0.5,
+    "proceed": false
+  },
+  "stage2_seeds": [
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220
+  ],
+  "epochs": 40,
+  "checkpoint_rule": "per run, the epoch with the best dev macro-F1 (earliest on ties)",
+  "bootstrap": {
+    "B": 10000,
+    "seed": 20261018,
+    "design": "hierarchical: seeds and test dialogues resampled; seed-level t-intervals also reported"
+  },
+  "multiplicity": {
+    "test_looks": 3,
+    "note": "the verdict uses the 95% rule; a Bonferroni-adjusted interval is also reported"
+  },
+  "criteria": {
+    "primary": "mean over stage-2 seeds of test macro-F1(winner) - macro-F1(A0), paired by seed, in points",
+    "success": [
+      "delta >= +1.0",
+      "hierarchical-bootstrap 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of seeds",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  },
+  "device": "cuda",
+  "env": {
+    "python": "3.13.15",
+    "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1",
+    "soundfile": "0.14.0",
+    "numpy": "2.1.3",
+    "pandas": "2.3.3",
+    "sklearn": "1.6.1",
+    "device": "cuda",
+    "gpu": "Tesla T4",
+    "cpus": 4,
+    "code_sha256": {
+      "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+      "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+      "l2_audio.py": "e3a3f04cea0debbc3ce9f32e719e4781725353518aa18f9a3c4d5e2cc5c7c814",
+      "l2_feature_leak.py": "a4dfa08870004beb9ef11d2ee1498ff71c42181f9c0da69ee66129265bf60406",
+      "l2_pathb.py": "74e6ec8a9755ab8bd58fbc1586521f0ee7a4708c222632d7b90cbc0f6842e63e",
+      "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+      "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+      "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+    }
+  }
+}
