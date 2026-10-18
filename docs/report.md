@@ -36,6 +36,8 @@ Several variants looked slightly better than B0 on validation, but none of those
 
 The evidence points to overlap between related emotions in the input features and the data, rather than to the decision rule, the loss or the training budget.
 
+A sixth follow-up, pre-registered on 2026-10-18 and **not yet run**, tests the input-feature explanation directly: it retrains the unchanged ECERC on frozen self-supervised speech features in place of its openSMILE audio (§8.7).
+
 ---
 
 ## 1. Background
@@ -396,6 +398,7 @@ These experiments differ from Stages 0–2 in three ways:
 | 3 | Training-time representation changes | no (dev gate) | no candidate passed the gate |
 | 4 | RoBERTa-large text expert fused with ECERC | yes | INCONCLUSIVE |
 | 5 | Qwen2.5-7B LLM expert fused with ECERC | no (dev gate) | gate not passed |
+| 6 | Self-supervised audio evidence for ECERC (§8.7) | — | pending: pre-registered, not yet run |
 
 ### 8.1 Experiment 1: post-hoc logit adjustment
 
@@ -465,6 +468,22 @@ On dev, the LLM alone matches or exceeds the released checkpoints on accuracy (6
 - **The limit is the evidence.** The minority classes overlap with related emotions (Fear with Surprise/Sadness/Anger, Disgust with Anger) in ECERC's input features. Among the follow-ups, only a second model reading the raw text raised a minority-class F1 on test by more than a fraction of a point (Fear +3.4), and its overall gain was not established.
 - **Test-set use.** Across the five follow-ups, the MELD test set was evaluated twice (Experiments 1 and 4).
 
+### 8.7 Experiment 6 (pre-registered, not yet run): self-supervised audio evidence
+
+§8.6 locates the limit in ECERC's input evidence, and the audio stream is its weakest part:
+
+- It is 300-d openSMILE functionals. A linear probe on it scores 22.4 dev macro-F1, and it carries a +7.2-point train-side advantage from supervised feature selection (§8.2).
+- The original loader routes it into the wrong model slots (§2, "Audio/visual slot order"): the model's 300-d audio input receives the first 300 visual dimensions.
+
+Experiment 6 keeps ECERC's architecture, loss, optimizer and schedule unchanged and changes only this input:
+
+- **Features.** Frozen Whisper-large-v3 and WavLM-large are run on 16 kHz MELD audio clips. Every utterance is aligned with the authors' feature file, and the alignment is checked against the text and the train/dev labels.
+- **Selection.** The encoder and layer band are chosen on the training split only, with the linear probe of §8.2.
+- **Arms.** A0 is the original recipe. A1 fixes the slot routing. A2 adds the new speech features. A3 additionally replaces the event input with bge-large-en-v1.5 sentence embeddings.
+- **Protocol.** A 5-seed dev screen with a +0.5 gate is followed by a 20-seed paired confirmation against A0. The test set is evaluated once, and this would be its third look.
+
+The full rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-18), and the notebook is `research/limitation2/notebooks/ECERC_L2_audio_evidence.ipynb`. This section will be replaced by the results once the run is done.
+
 ## 9. Limitations of this study
 
 - **Few seeds.** Only 3 seeds per configuration, with no significance tests. The standard deviations are themselves imprecise.
@@ -479,7 +498,7 @@ On dev, the LLM alone matches or exceeds the released checkpoints on accuracy (6
 
 Two of the follow-ups proposed in the first version of this report were carried out in §8: post-hoc per-class decision-rule changes (Experiment 1) and representation-level methods, including a confusion-aware contrastive term on the fused features (Experiment 3). Neither helped. Still open:
 
-- **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points.
+- **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points. Experiment 6 (§8.7, pre-registered) tests stronger audio features inside ECERC itself.
 - **Decoupled classifier re-training** (e.g. cRT) and **more seeds** per configuration, which were not tried.
 - **Label ambiguity.** How much of the minority-class error comes from MELD's annotation disagreement was not measured.
 

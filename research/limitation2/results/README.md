@@ -11,6 +11,7 @@ and headline numbers as printed by the notebook.
 | 3. Path B (representation changes) | `ecerc_l2_pathb_results.zip` | `run_kaggle_pathb_1/outputs_pathb/` | Kaggle T4, 2026-10-11 |
 | 4. RoBERTa text expert fusion | `ecerc_l2_expert_results.zip` | `run_kaggle_expert_1/outputs_expert/` | Kaggle T4, 2026-10-11 |
 | 5. LLM expert fusion | `ecerc_l2_llm_results.zip` | `run_kaggle_llm_1/outputs_llm/` | Kaggle 2× T4, 2026-10-12 |
+| 6. Self-supervised audio evidence | `ecerc_l2_audio_results.zip` (when run) | `run_kaggle_audio_1/outputs_audio/` (when run) | pending; pre-registered 2026-10-18 |
 
 ## What a run folder contains
 
@@ -28,7 +29,9 @@ Not every file exists in every run; experiments 2, 3 and 5 never reached the tes
   - experiment 2: `leak_results.json`, `rule.json`;
   - experiment 3: `stage1_summary.json`;
   - experiment 4: `expert_training.json`, `dev_selection.json`, `test_results_expert.json`;
-  - experiment 5: `llm_training.json`, `dev_selection.json`, `logs/` (per-seed training logs).
+  - experiment 5: `llm_training.json`, `dev_selection.json`, `logs/` (per-seed training logs);
+  - experiment 6: `audio_alignment.json`, `feature_extraction.json`, `probe_selection.json`, `stage1_summary.json`
+    and, if the gate passes, `test_results_audio.json` and the per-seed test log-probabilities.
 - `tables/` (CSV), `figures/` (PNG) and `dumps/` (per-model log-probabilities as `.npz`) where produced.
 
 Model weights are not saved.

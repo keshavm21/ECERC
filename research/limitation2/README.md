@@ -1,7 +1,8 @@
 # Limitation 2 (class imbalance): follow-up experiments on MELD
 
-This folder holds five pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
-study in [`docs/report.md`](../../docs/report.md). Nothing outside `research/limitation2/` was changed. The
+This folder holds six pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
+study in [`docs/report.md`](../../docs/report.md). Experiments 1–5 are done; Experiment 6 was pre-registered on
+2026-10-18 and has not been run yet. Nothing outside `research/limitation2/` was changed. The
 original code in `MELD/` and `IEMOCAP/` is untouched; the four files this work needs were copied verbatim into
 `ecerc_original/` (their SHA-256 hashes match the originals, see `MANIFEST.json`).
 
@@ -21,11 +22,13 @@ audit of the released code, each experiment, why it happened, possible improveme
 | 3 | Path B: training-time representation changes (RoBERTa layer mean, confusion-aware contrastive loss, sentiment head, higher lr) | Kaggle T4 | no (dev gate not passed) | No candidate beat the original recipe by 0.5 dev macro-F1 (best +0.19) |
 | 4 | Context-aware RoBERTa-large text expert, fused with ECERC by a dev-chosen weight | Kaggle T4 | yes | **INCONCLUSIVE**: Δ macro-F1 +0.27 [−1.92, +2.29]; Fear F1 26.1 → 29.5, but Disgust and Joy fell |
 | 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
+| 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed, unchanged ECERC retrained (20 paired seeds) | Kaggle T4 | — | **Pending**: pre-registered 2026-10-18, not yet run |
 
 Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
 label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), and only
 partly helped by a second model reading the raw text (4, 5). The MELD test set was evaluated twice in total
-(experiments 1 and 4).
+(experiments 1 and 4). Experiment 6 tests the remaining lead directly: it keeps ECERC and its recipe unchanged and
+replaces its weakest input, the audio features, with stronger frozen ones.
 
 ## Folder layout
 
@@ -36,13 +39,15 @@ partly helped by a second model reading the raw text (4, 5). The MELD test set w
 | `notebooks/ECERC_L2_pathB_representation.ipynb` | Experiment 3 (done): training-time representation changes |
 | `notebooks/ECERC_L2_expert_fusion.ipynb` | Experiment 4 (done): context-aware text expert fused with ECERC |
 | `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
+| `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (pending): self-supervised audio features for ECERC |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
 | `src/l2_expert.py` | Experiment 4 library (text expert, fusion, gate, test) |
 | `src/l2_llm.py`, `src/l2_llm_worker.py` | Experiment 5 library and its per-GPU training/prediction worker |
+| `src/l2_audio.py` | Experiment 6 library (audio download and alignment, frozen encoders, train-only selection, screen, confirmation, test) |
 | `ecerc_original/` | Verbatim copies of `MELD/model.py`, `dataloader.py`, `inference.py`, `loss.py` |
-| `tools/build_notebook.py` | Rebuilds all five notebooks and `MANIFEST.json` after any edit to `src/` |
+| `tools/build_notebook.py` | Rebuilds all six notebooks and `MANIFEST.json` after any edit to `src/` |
 | `tests/smoke_test*.py` | Local CPU tests of each notebook on synthetic data |
 | `ECERC_L2_followup_report.pdf` | Report on the five experiments (written 2026-10-12) |
 | `PROTOCOL.md` | Pre-registered rules, criteria and interpretation |
@@ -53,6 +58,23 @@ partly helped by a second model reading the raw text (4, 5). The MELD test set w
 
 The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
 and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
+
+### Experiment 6: audio evidence on Kaggle (about 2.5 to 3.5 hours on a T4, runs in the background)
+
+Same steps as Experiment 3 below, with two differences: import
+`research/limitation2/notebooks/ECERC_L2_audio_evidence.ipynb`, and download
+`ecerc_l2/ecerc_l2_audio_results.zip` from **Output** when it finishes. **Internet → On** is required: the notebook
+downloads about 8 GB (the MELD features, the MELD audio and three frozen encoders from Hugging Face), all
+SHA-256 checked or pinned to a fixed revision. Only one of the two T4s is used.
+
+What it prints along the way:
+- the alignment of the audio with the feature file (about 3 utterances without usable audio are expected);
+- extraction progress for Whisper-large-v3 (the longest step, about 25 minutes) and WavLM-large;
+- the train-only feature selection table and the selected encoder and layer band;
+- 20 dev-screen runs, the Stage 1 table and the gate decision;
+- if the gate passed, 40 confirmatory runs and then the single test evaluation.
+
+If the gate fails, the notebook still finishes normally and writes the zip; the test set stays sealed.
 
 ### Experiment 5: LLM expert on Kaggle (about 3 to 6 hours on GPU T4 x2; the recorded run took 1 h 40 min)
 
@@ -113,6 +135,7 @@ once per run, and the first complete run is the result.
 | `Safe loader refused the data file (blocked global ...)` | In the first code cell, set `TRUST_DATA_PICKLE = True`, then **Run all** again. The file comes from the authors' official link and the Colab VM is isolated |
 | A check marked `[FAIL]` stops the run | Copy the full error and send it. Nothing has touched the test set at that point |
 | The runtime disconnects | **Runtime → Run all** again. Downloads restart from scratch on a new VM |
+| Experiment 6: `retry ... after error` lines, or a Hugging Face download error | Transient network errors are retried five times. If it still stops, commit the version again; nothing has touched the test set at that point |
 
 ## Local checks (optional, CPU)
 
@@ -124,7 +147,11 @@ python3 tools/build_notebook.py          # after editing anything in src/
 .venv/bin/python tests/smoke_test_pathb.py    # Experiment 3
 .venv/bin/python tests/smoke_test_expert.py   # Experiment 4; also needs transformers
 .venv/bin/python tests/smoke_test_llm.py      # Experiment 5; also needs transformers and peft
+.venv/bin/python tests/smoke_test_audio.py    # Experiment 6; also needs transformers, tokenizers and soundfile
 ```
 
 The smoke tests run each notebook's real code path on small synthetic data (synthetic numbers are meaningless).
 They also check that no test-split label is read before the freeze, and that gated runs skip the test.
+Experiment 6's test also plants the awkward cases of the real audio release (a missing clip, an extra clip, a text
+mismatch, a gap in the utterance IDs, an over-long and an over-short clip) and checks that the test CSV is read
+without its emotion column.

@@ -20,6 +20,7 @@ LEAK_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_feature_leak_check.ipy
 PATHB_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_pathB_representation.ipynb')
 EXPERT_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_expert_fusion.ipynb')
 LLM_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_llm_fusion.ipynb')
+AUDIO_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_audio_evidence.ipynb')
 OBSERVED_DATA_SHA = 'a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80'  # run_colab_1
 HF = 'https://huggingface.co/zt-ai/ECERC/resolve/main/MELD/'
 CHECKPOINTS = [
@@ -29,6 +30,31 @@ CHECKPOINTS = [
 ]
 DATA_FILE_ID = '1IQokygWgjaZuSXvCsfIcUzj1Gu69hDCb'
 DATA_FILENAME = 'meld_emotion_semantic_features_roberta.pkl'
+# Experiment 6: 16 kHz FLAC audio extracted from the MELD videos, and frozen encoders, all pinned to a revision.
+AUDIO_DATASET = dict(
+    repo='ajyy/MELD_audio', revision='90175e5207b0f1fb6f3742b3d9036b0fda509086', license='gpl-3.0',
+    sha256={'train.csv': '4e3907e95e7ad4fd413a5a58d807dee79ebdb0c16b050cd33c3a3ac35ddb9ebf',
+            'dev.csv': '7e306369c2d1625b063132310aa30bc6979fcf0f51c783e903edfcaa1c98b15c',
+            'test.csv': '2d3fdb6586bdcdf172a7197fae9244116b1103efd951db2317e6a67c7042d28e',
+            'archive/train.tar.gz': 'ddf650657ed9232b27bd4789adcfc504156df3f87d4b6073c37de637b9f97aa9',
+            'archive/dev.tar.gz': '1b04cc9368d66a24442666eaa32a8c2da19332fd769c9b1aa02258a605748678',
+            'archive/test.tar.gz': 'aef4ba7ea47a9c2b7653db869fcbc677cb50e795f46ec1e00077a3214de1ee66'})
+AUDIO_ENCODERS = [
+    dict(name='whisper-large-v3', repo='openai/whisper-large-v3', revision='06f233fe06e710322aca913c1bc4249a0d71fce1',
+         kind='whisper', batch=8),
+    dict(name='wavlm-large', repo='microsoft/wavlm-large', revision='c1423ed94bb01d80a3f5ce5bc39f6026a0f4828c',
+         kind='wavlm', batch=1),
+]
+TEXT_ENCODER = dict(name='bge-large-en-v1.5', repo='BAAI/bge-large-en-v1.5',
+                    revision='d4aa6901d3a41ba39fb536a557fa166f842b0e09', max_len=128, batch=64)
+ENCODER_WEIGHTS = {  # documentation only: the notebook loads each repository at the pinned revision
+    'openai/whisper-large-v3': dict(file='model.safetensors', bytes=3087130976, license='apache-2.0',
+                                    sha256='a8e94b85976e5864ba3e9525c7e6c83b2a1eca42d4b797a0c7c24d778e40fd95'),
+    'microsoft/wavlm-large': dict(file='pytorch_model.bin', bytes=1261990257, license='not stated on the model card',
+                                  sha256='fdee460e529396ddb2f8c8e8ce0ad74cfb747b726bc6f612e666c7c1e1963c9d'),
+    'BAAI/bge-large-en-v1.5': dict(file='model.safetensors', bytes=1340616616, license='mit',
+                                   sha256='45e1954914e29bd74080e6c1510165274ff5279421c89f76c418878732f64ae7'),
+}
 
 
 def sha256(path):
@@ -602,19 +628,154 @@ except ImportError:
     return files
 
 
+AUDIO_CONFIG_CELL = """
+# ===== Configuration: leave as is. (Set TRUST_DATA_PICKLE = True only if the data cell asks you to.) =====
+import os
+os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')  # deterministic GPU matrix products
+
+TRUST_DATA_PICKLE = False
+
+if os.path.isdir('/kaggle/working'):
+    WORK_DIR = '/kaggle/working/ecerc_l2'
+elif os.path.isdir('/content'):
+    WORK_DIR = '/content/ecerc_l2'
+else:
+    WORK_DIR = os.path.abspath('ecerc_l2_work')
+CONFIG = dict(
+    work_dir=WORK_DIR,
+    cache_dir='/tmp/ecerc_l2_cache',        # downloads (about 8 GB), features, checkpoints; not in the saved output
+    data_file_id='%(data_id)s',            # authors' Google Drive (linked from the official ECERC README)
+    data_filename='%(data_name)s',
+    expected_data_sha256='%(data_sha)s',  # observed in run_colab_1
+    trust_data_pickle=TRUST_DATA_PICKLE,
+    expected_split_utterances=dict(train=9989, valid=1109, test=2610),
+    expected_split_dialogues=dict(train=[1038, 1039], valid=114, test=280),
+    audio_dataset=%(audio_dataset)s,
+    audio_encoders=%(audio_encoders)s,
+    text_encoder=%(text_encoder)s,
+    layer_band=4,                           # candidates: means over bands of 4 consecutive encoder layers
+    max_audio_seconds=30.0, min_audio_samples=1600,
+    max_missing_audio=20, min_text_agreement=0.99,
+    probe_folds=5, probe_fold_seed=2026, probe_C=1.0, probe_max_iter=1000,  # the feature-leak check's probe
+    epochs=40,                              # as in MELD/train.py
+    stage1_seeds=[101, 102, 103, 104, 105], stage2_seeds=list(range(201, 221)),
+    gate_min_gain=0.5,                      # stage 2 runs only if the dev winner beats A0 by >= 0.5 macro-F1
+    pathb_c0_dev_macro_f1={101: 55.1213, 102: 54.0365, 103: 53.2054},  # Path B's C0 (reported, not decisive)
+    bootstrap_B=10000, boot_seed=20261018,
+    test_looks=3,                           # experiments 1 and 4 opened the test set before this one
+    offline=False,                          # True only for the local smoke test
+)
+os.makedirs(WORK_DIR, exist_ok=True)
+print('Working directory:', WORK_DIR)
+"""
+
+
+def _literal(obj, indent=4):
+    """A Python literal for the config cell, continuation lines indented to sit inside CONFIG = dict(...)."""
+    import pprint
+    return pprint.pformat(obj, width=112 - indent, sort_dicts=False).replace('\n', '\n' + ' ' * indent)
+
+
+def build_audio():
+    files = code_files()
+    for n in ('l2_feature_leak.py', 'l2_pathb.py', 'l2_audio.py'):
+        files[n] = os.path.join(ROOT, 'src', n)
+    code_cell = code_files_cell(
+        files, '# Writes the verbatim ECERC files and the analysis code, checks their SHA-256, then sets up.\n',
+        'import l2_posthoc\nimportlib.reload(l2_posthoc)\nimport l2_feature_leak\nimportlib.reload(l2_feature_leak)\n'
+        'import l2_pathb\nimportlib.reload(l2_pathb)\nimport l2_audio as LA\nimportlib.reload(LA)\n'
+        'S = LA.stage_setup(CONFIG, CODE_DIR)\n')
+    cells = [
+        md("""
+# ECERC Limitation 2, Experiment 6: better audio evidence for ECERC
+
+Experiments 1 to 5 showed that ECERC's rare-emotion ceiling is set by its precomputed input features, not by its decision rule, objective or training. Its weakest input is audio: 300-d openSMILE features that, because the original loader swaps the audio and visual slots, mostly reach the model's visual projection. This experiment computes **frozen self-supervised speech features** (Whisper-large-v3 or WavLM-large) from the MELD audio and retrains the **unchanged** ECERC model on them.
+
+1. Downloads the authors' MELD features and the MELD audio (16 kHz FLAC, SHA-256 checked), and aligns every utterance. No test label is read.
+2. Runs the frozen encoders on every clip, then chooses the encoder and layer band on the **training split only** (linear probe, 5 folds).
+3. **Stage 1, dev only** (5 seeds each): **A0** the original recipe; **A1** audio and visual routed to the right slots; **A2** A1 with the new speech features; **A3** A2 with bge-large sentence embeddings as the event input.
+4. **Freeze:** the dev winner and every rule go to `frozen_config_audio.json`. If the winner doesn't beat A0 by at least 0.5 dev macro-F1, the run stops there and the test set stays sealed.
+5. **Stage 2, confirmatory:** 20 new seeds × {A0, winner}. The test set is evaluated **once**, at the end. This is the third look at the MELD test set, so a multiplicity-adjusted interval is reported as well.
+
+Expect roughly 2.5 to 3.5 hours on a T4 and about 8 GB of downloads. On Kaggle: **GPU T4 x2**, Internet **On**, then **Save Version → Save & Run All (Commit)**.
+"""),
+        code(AUDIO_CONFIG_CELL % dict(data_id=DATA_FILE_ID, data_name=DATA_FILENAME, data_sha=OBSERVED_DATA_SHA,
+                                      audio_dataset=_literal(AUDIO_DATASET), audio_encoders=_literal(AUDIO_ENCODERS),
+                                      text_encoder=_literal(TEXT_ENCODER))),
+        md("""
+## 1. Code
+The four original ECERC files (verbatim), `l2_posthoc.py`, `l2_feature_leak.py` and `l2_pathb.py` from the earlier experiments (unchanged), and `l2_audio.py`, embedded as base64 and checked by SHA-256. Readable copies are in `research/limitation2/`.
+"""),
+        code(code_cell),
+        md("""
+## 2. MELD features (authors' Google Drive) and data checks (only train and dev labels are read)
+"""),
+        code('LA.stage_prepare(S)'),
+        md("""
+## 3. MELD audio (Hugging Face, SHA-256 checked) and its alignment with the feature file
+The test split's labels are not read: its CSV is parsed without the emotion column.
+"""),
+        code('LA.stage_audio(S)'),
+        md("""
+## 4. Frozen encoders: Whisper-large-v3 and WavLM-large on every clip, bge-large on every utterance (about 40 minutes)
+"""),
+        code('LA.stage_extract(S)'),
+        md("""
+## 5. Feature selection on the training split (linear probes, 5 folds of training dialogues)
+"""),
+        code('LA.stage_select(S)'),
+        md("""
+## 6. Stage 1: dev screen (20 training runs, about 35 minutes)
+"""),
+        code('LA.stage_screen(S)'),
+        md("""
+## 7. Freeze
+"""),
+        code('LA.stage_freeze(S)'),
+        md("""
+## 8. Stage 2: confirmatory training (40 runs, about 70 minutes; skipped if the gate failed)
+"""),
+        code('LA.stage_confirm(S)'),
+        md("""
+## 9. Test evaluation (runs once)
+"""),
+        code('LA.stage_test(S)'),
+        md("""
+## 10. Results
+Prints the summary and writes `ecerc_l2_audio_results.zip`. On Kaggle it's under **Output** (`ecerc_l2/ecerc_l2_audio_results.zip`) once the version finishes.
+"""),
+        code("""
+zpath = LA.stage_package(S)
+try:
+    from google.colab import files
+    files.download(zpath)
+except ImportError:
+    print('Download this file from the Output panel ->', zpath)
+"""),
+    ]
+    write_notebook(AUDIO_NOTEBOOK, cells, gpu=True)
+    return files
+
+
 def write_manifest(files):
     manifest = dict(
         description='Hashes and sources for research/limitation2. Regenerate with tools/build_notebook.py.',
         original_files={f'MELD/{n}': sha256(os.path.join(REPO, 'MELD', n)) for n in ORIGINALS},
         verbatim_copies={f'ecerc_original/{n}': sha256(p) for n, p in files.items() if n in ORIGINALS},
         analysis_library={f'src/{n}': sha256(os.path.join(ROOT, 'src', n))
-                          for n in ('l2_posthoc.py', 'l2_feature_leak.py', 'l2_pathb.py', 'l2_expert.py', 'l2_llm.py', 'l2_llm_worker.py')},
-        notebook={os.path.relpath(p, ROOT): sha256(p) for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK, LLM_NOTEBOOK)},
+                          for n in ('l2_posthoc.py', 'l2_feature_leak.py', 'l2_pathb.py', 'l2_expert.py', 'l2_llm.py',
+                                    'l2_llm_worker.py', 'l2_audio.py')},
+        notebook={os.path.relpath(p, ROOT): sha256(p)
+                  for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK, LLM_NOTEBOOK, AUDIO_NOTEBOOK)},
         checkpoints={n: dict(url=HF + f, sha256=h) for n, f, h in CHECKPOINTS},
         in_repo_checkpoint={'MELD/ECERC_MODEL.pkl': sha256(os.path.join(REPO, 'MELD', 'ECERC_MODEL.pkl'))},
         data=dict(file=DATA_FILENAME, google_drive_file_id=DATA_FILE_ID,
                   source='ECERC README -> Drive folder 1DGoPEBvMgMOge7u20wjKn6slYe4awyQi -> meld/',
-                  sha256=OBSERVED_DATA_SHA, sha256_note='observed in run_colab_1; no checksum is published'))
+                  sha256=OBSERVED_DATA_SHA, sha256_note='observed in run_colab_1; no checksum is published'),
+        audio_data=dict(AUDIO_DATASET, url=f'https://huggingface.co/datasets/{AUDIO_DATASET["repo"]}',
+                        note='16 kHz mono FLAC clips extracted from the official MELD videos (experiment 6)'),
+        encoders={e['repo']: dict(revision=e['revision'], url=f'https://huggingface.co/{e["repo"]}',
+                                  weights=ENCODER_WEIGHTS[e['repo']]) for e in AUDIO_ENCODERS + [TEXT_ENCODER]})
     with open(os.path.join(ROOT, 'MANIFEST.json'), 'w') as f:
         json.dump(manifest, f, indent=2)
         f.write('\n')
@@ -626,5 +787,7 @@ if __name__ == '__main__':
     build_pathb()
     build_expert()
     build_llm()
+    build_audio()
     write_manifest(files)
-    print('wrote', ', '.join(os.path.relpath(p, REPO) for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK, LLM_NOTEBOOK)), 'and MANIFEST.json')
+    print('wrote', ', '.join(os.path.relpath(p, REPO) for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK,
+                                                                LLM_NOTEBOOK, AUDIO_NOTEBOOK)), 'and MANIFEST.json')

@@ -261,3 +261,99 @@ Bonferroni-adjusted 98.33% interval is also reported, with a flag for whether it
 - The LLM's pretraining data may include transcripts of the TV series MELD comes from. This affects the absolute
   LLM scores, as it does for every published LLM result on MELD. It does not affect how the experiment was
   conducted (dev-only decisions, a single test pass).
+
+---
+
+# Addendum (2026-10-18, fixed before running): Experiment 6, self-supervised audio evidence
+
+## Motivation
+- **Runs 1–5:** ECERC's rare-emotion ceiling is set by its precomputed input evidence; only new evidence (experiment 4's
+  text expert) moved a rare class on test.
+- **The audio stream is the weakest input.**
+  - It is 300-d openSMILE functionals: linear-probe dev macro-F1 22.4, with a +7.2-point train-side advantage from
+    supervised feature selection (experiment 2).
+  - The original loader routes it into the wrong model slots. The 300-d "audio" input holds the first 300 visual
+    dimensions; the "visual" input holds the last 42 visual dimensions plus all of the audio.
+- **Literature:** on MELD, replacing OpenSMILE with wav2vec features in a fixed architecture raised weighted F1 from
+  66.4 to 68.4 (MiSTER-E, Table 3). Frozen Whisper-large features beat eGeMAPS by 12 weighted-F1 points as an
+  audio-only classifier (MERBench).
+
+## Audio
+- **Source:** 16 kHz mono FLAC clips extracted from the official MELD videos, Hugging Face dataset `ajyy/MELD_audio`
+  at revision `90175e52…` (GPL-3.0, like MELD). The three archives and three CSVs are SHA-256 checked (`MANIFEST.json`).
+- **Alignment with the authors' feature file:**
+  - The data-file dialogue key equals the MELD `Dialogue_ID` plus a per-split offset. The offset is the one shared by
+    the dialogues whose normalised utterance text matches exactly; at least 95% must match.
+  - Every dialogue must have the same number of utterances. Utterance i is the i-th CSV row by `Utterance_ID`.
+  - Normalised text must agree for at least 99% of each split's utterances.
+  - Train and dev CSV labels must equal the data-file labels.
+  - The test CSV is parsed without its emotion column, so no test label is read.
+- **Utterances without usable audio:** a missing clip, or text that disagrees with the data file. They get the training
+  mean (0 after standardisation). At most 20 are allowed, or the run stops.
+- **Clip length:** clips longer than 30 s are truncated to their first 30 s; clips shorter than 0.1 s are zero-padded.
+
+## Features
+All encoders are frozen (no MELD fine-tuning). They run identically on every split; this is label-free preprocessing,
+like the authors' precomputed features.
+- **Speech encoders:** Whisper-large-v3 encoder (`openai/whisper-large-v3` @`06f233fe…`) and WavLM-large
+  (`microsoft/wavlm-large` @`c1423ed9…`). For each utterance and layer, the hidden states are averaged over the frames
+  that cover real audio.
+- **Candidates:** means over bands of 4 consecutive layers: Whisper 1–4 … 29–32 (8 bands) and WavLM 1–4 … 21–24
+  (6 bands), 14 in all.
+- **Event text (arm A3):** `BAAI/bge-large-en-v1.5` @`d4aa6901…`. Its [CLS] embedding, L2-normalised, of the utterance
+  text with experiment 4's character clean-up; punctuation kept; at most 128 tokens.
+- **Standardisation:** the new features are standardised with the training utterances' mean and SD.
+
+## Selection (training split only)
+- The feature-leak check's probe: standardised features, logistic regression, C = 1, max_iter = 1000.
+- 5 folds of training dialogues, fold seed 2026.
+- The candidate with the highest out-of-fold macro-F1 is selected; ties go to the earlier candidate in the list above.
+- Dev probe scores are reported, not used. Probes on openSMILE, `sroberta1` and bge are reported for reference.
+
+## Arms
+ECERC's architecture and the original recipe are unchanged in every arm: `Loss(gamma = 1)`, Adam lr 1e-5, weight
+decay 2e-4, batch 32, 40 epochs.
+
+| Arm | Inputs |
+|---|---|
+| A0 | Original features and slot routing (= Path B's C0) |
+| A1 | Original features; audio and visual routed to the slots the model expects |
+| A2 | A1 with openSMILE replaced by the selected speech features |
+| A3 | A2 with the event input `sroberta1` replaced by bge-large-en-v1.5 |
+
+## Stage 1: dev screen
+- 5 seeds (101 to 105) per arm. Each run keeps its best-dev-macro-F1 epoch (earliest on ties).
+- **Winner:** the highest mean dev macro-F1 among A1 to A3.
+- **Gate:** Stage 2 runs only if the winner beats A0 by at least 0.5 dev macro-F1.
+- **Fidelity (reported, not decisive):** A0 seeds 101 to 103 against Path B's C0 (55.12, 54.04, 53.21).
+
+## Freeze
+The selected features (with the SHA-256 of the final feature arrays), winner, seeds, checkpoint rule and criteria are
+written to `frozen_config_audio.json` before any test access.
+
+## Stage 2: confirmatory
+- Seeds 201 to 220, × {A0, winner}. Same checkpoint rule.
+- The test set is evaluated once, after all training.
+
+## Statistics
+- **Primary:** mean paired difference in test macro-F1 (winner − A0) across the 20 seeds.
+- **95% CI:** hierarchical bootstrap that resamples seeds and test dialogues (B = 10,000, seed 20261018).
+- **Also reported:** seed-level t-intervals, and the number of seeds with a positive difference, for macro-F1, weighted
+  F1, accuracy, Fear F1 and Disgust F1.
+
+## Verdict
+The thresholds are those of experiments 1 and 3 to 5. Consistency means the difference is > 0 in at least 70% of seeds
+(14 of 20).
+
+## Multiplicity
+This would be the third test look, after experiments 1 and 4. The verdict uses the pre-registered 95% rule. A
+Bonferroni-adjusted 98.33% interval is also reported, with a flag for whether its lower bound is above 0.
+
+## Disclosure
+- The result is reported as "ECERC with self-supervised audio evidence" (with a new event encoder if A3 wins). The
+  architecture and objective are unchanged; the input features differ.
+- Whisper's speech-recognition training data and the pretraining data of WavLM and bge are public web corpora that may
+  include Friends audio or transcripts, but no emotion labels. emotion2vec was not used, because its pretraining
+  included MELD audio.
+- The clips come from a third-party extraction of the official MELD videos; their alignment with the authors' feature
+  file is checked as described above.
