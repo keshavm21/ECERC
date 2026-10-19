@@ -1,0 +1,9 @@
+{"time": "2026-10-18 19:04:47", "stage": "setup", "device": "cuda", "gpus": [["Tesla T4", 14.6], ["Tesla T4", 14.6]], "torch": "2.11.0+cu128", "transformers": "5.16.1"}
+{"time": "2026-10-18 19:05:01", "stage": "downloads verified", "data_MB": 485.7, "data_sha256": "a0349614b2b58e8b"}
+{"time": "2026-10-18 19:05:02", "stage": "data loaded", "seconds": 0.7, "dialogues": {"train": 1038, "valid": 114, "test": 280}}
+{"time": "2026-10-18 19:07:49", "stage": "LLM loaded", "model": "unsloth/Qwen2.5-32B-Instruct-bnb-4bit", "seconds": 161.1, "devices": ["cuda:0", "cuda:1"]}
+{"time": "2026-10-18 19:55:31", "stage": "LLM dev predictions done", "minutes": 47.7, "label_mass": 0.994}
+{"time": "2026-10-18 19:55:31", "stage": "dev analysis done", "w_star": 0.2, "forecast": 5.63, "proceed": true}
+{"time": "2026-10-18 19:55:31", "stage": "FREEZE", "sha256": "b91c71756d9e18da", "w_star": 0.2, "proceed": true}
+{"time": "2026-10-18 19:55:31", "stage": "TEST evaluation starts (test dialogues are run and test labels read only from here on)"}
+{"time": "2026-10-18 21:49:33", "stage": "TEST done", "verdict": "TRADE-OFF", "delta": 3.38, "ci": [0.64, 5.73]}

@@ -11,7 +11,7 @@ is then evaluated at most once per experiment. Full write-ups are in
 [`results/FINDINGS.md`](results/FINDINGS.md) (per-run findings) and
 [`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on experiments 1–5: the
 audit of the released code, each experiment, why it happened, possible improvements and limitations).
-Experiment 6 is written up in `FINDINGS.md` only. Experiment 7 was pre-registered on 2026-10-19 and has not been run yet.
+Experiments 6 and 7 are written up in `FINDINGS.md` only.
 
 ## Results at a glance
 
@@ -23,12 +23,18 @@ Experiment 6 is written up in `FINDINGS.md` only. Experiment 7 was pre-registere
 | 4 | Context-aware RoBERTa-large text expert, fused with ECERC by a dev-chosen weight | Kaggle T4 | yes | **INCONCLUSIVE**: Δ macro-F1 +0.27 [−1.92, +2.29]; Fear F1 26.1 → 29.5, but Disgust and Joy fell |
 | 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
 | 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed (and a bge event-input arm), unchanged ECERC retrained | Kaggle T4 | no (dev gate not passed) | All four arms within 0.1 dev macro-F1 (best +0.08); the better audio trades Sadness (+2.2) against Joy (−2.4) |
-| 7 | Zero-shot Qwen2.5-32B-Instruct (4-bit, never trained on MELD labels), label-free calibration, fused with the released ECERC checkpoints by a dev-chosen weight | Kaggle 2× T4 | — | **Pending**: pre-registered 2026-10-19, not yet run; a dev-only 3B pilot gave a cross-fitted dev gain of +0.76 after calibration ([pilot](results/pilot_local_zeroshot_3b/README.md)) |
+| 7 | Zero-shot Qwen2.5-32B-Instruct (4-bit, never trained on MELD labels), label-free calibration, fused with the released ECERC checkpoints by a dev-chosen weight | Kaggle 2× T4 | yes | **TRADE-OFF**: Δ macro-F1 **+3.38 [95% CI +0.64, +5.73]**, positive for all three checkpoints; Fear +7.6, Disgust +8.8, Sadness +5.7 F1; accuracy +0.9, weighted F1 +0.8; Joy −3.3 breaks the −2.0 class guardrail ([dev pilot](results/pilot_local_zeroshot_3b/README.md)) |
 
 Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
 label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), only
 partly helped by a second model reading the raw text (4, 5), and not fixed by much better audio features or by
-correcting the audio/visual routing (6). The MELD test set was evaluated twice in total (experiments 1 and 4).
+correcting the audio/visual routing (6).
+
+The one intervention that worked is a partner that never saw MELD's skewed labels (7). A zero-shot 32B LLM, fused
+with ECERC, raised test macro-F1 by 3.4 points, with the largest gains on Fear, Disgust and Sadness. The cost was
+a fall in Joy, beyond the pre-registered per-class guardrail.
+
+The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
 
 ## Folder layout
 
@@ -40,7 +46,7 @@ correcting the audio/visual routing (6). The MELD test set was evaluated twice i
 | `notebooks/ECERC_L2_expert_fusion.ipynb` | Experiment 4 (done): context-aware text expert fused with ECERC |
 | `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
 | `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (done): self-supervised audio features for ECERC |
-| `notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb` | Experiment 7 (pending): zero-shot LLM fused with ECERC |
+| `notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb` | Experiment 7 (done): zero-shot LLM fused with ECERC |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
@@ -61,7 +67,7 @@ correcting the audio/visual routing (6). The MELD test set was evaluated twice i
 The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
 and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
 
-### Experiment 7: zero-shot LLM fusion on Kaggle (about 1 to 1.5 hours on GPU T4 x2)
+### Experiment 7: zero-shot LLM fusion on Kaggle (about 3 hours on GPU T4 x2; the recorded run took 2 h 45 min)
 
 Same steps as Experiment 3 below, with three differences:
 - import `research/limitation2/notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb`;

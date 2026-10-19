@@ -6,6 +6,8 @@ This repository is my part (**Person B**, Keshav Mishra) of a three-person cours
 
 **The answer, under a validation-only selection protocol with 3 seeds per configuration: no.** None of the four interventions beat the original ECERC objective on the held-out test set in mean accuracy, weighted F1 or macro-F1. Every intervention had lower test macro-F1 than the baseline on all three seeds. I report this as a negative result.
 
+**Follow-up result (Experiment 7).** A later pre-registered follow-up found the study's first confirmed gain on the rare emotions, from outside ECERC. Fusing ECERC with a zero-shot LLM, which has never been trained on MELD's skewed labels, raised test macro-F1 by **+3.38 [95% CI +0.64, +5.73]**. It was positive with every released checkpoint, with Fear F1 +7.6, Disgust +8.8 and Sadness +5.7. The pre-registered verdict is TRADE-OFF, because Joy fell 3.3 points (see below).
+
 | Configuration | Accuracy | Weighted F1 | Macro-F1 | Fear F1 | Disgust F1 |
 |---|---|---|---|---|---|
 | **B0** (original ECERC objective) | **66.87 ± 0.65** | **66.00 ± 0.54** | **50.40 ± 0.87** | 26.22 ± 3.29 | 30.72 ± 1.43 |
@@ -31,7 +33,7 @@ This repository is my part (**Person B**, Keshav Mishra) of a three-person cours
   - FL2 was above B0 on all three seeds on validation, then below B0 on test macro-F1 on all three seeds.
   - Validation has only 40 Fear and 22 Disgust utterances.
 
-**Follow-up research: why the rare emotions stay low** ([`research/limitation2/`](research/limitation2/), report §8, full write-up of experiments 1–5 in [`ECERC_L2_followup_report.pdf`](research/limitation2/ECERC_L2_followup_report.pdf)). Seven further experiments, each pre-registered with dev-only decisions and at most one test evaluation; the seventh has not been run yet:
+**Follow-up research: why the rare emotions stay low** ([`research/limitation2/`](research/limitation2/), report §8, full write-up of experiments 1–5 in [`ECERC_L2_followup_report.pdf`](research/limitation2/ECERC_L2_followup_report.pdf)). Seven further experiments, each pre-registered with dev-only decisions and at most one test evaluation:
 
 | # | Experiment | Result |
 |---|---|---|
@@ -41,9 +43,9 @@ This repository is my part (**Person B**, Keshav Mishra) of a three-person cours
 | 4 | RoBERTa-large text expert fused with ECERC | Inconclusive: Fear F1 26.1 → 29.5, macro-F1 +0.27 [−1.92, +2.29] |
 | 5 | Fine-tuned Qwen2.5-7B expert fused with ECERC | Did not pass the dev gate; test not used |
 | 6 | Frozen self-supervised speech features (Whisper-large-v3 / WavLM-large) in place of ECERC's openSMILE audio, with the audio/visual routing fixed; unchanged ECERC retrained | Did not pass the dev gate (best +0.08 macro-F1); test not used. The new audio is far better on its own but trades Sadness against Joy inside ECERC |
-| 7 | Zero-shot Qwen2.5-32B-Instruct (never trained on MELD labels), label-free calibration, fused with ECERC by a dev-chosen weight | Pending: pre-registered 2026-10-19, not yet run |
+| 7 | Zero-shot Qwen2.5-32B-Instruct (never trained on MELD labels), label-free calibration, fused with ECERC by a dev-chosen weight | **Gain, verdict TRADE-OFF:** macro-F1 50.87 → 54.25, Δ +3.38 [+0.64, +5.73], positive for all three checkpoints. Fear F1 26.1 → 33.8, Disgust 31.4 → 40.2, Sadness 41.0 → 46.7, accuracy +0.9, weighted F1 +0.8. Joy −3.3 breaks the −2.0 class guardrail; the third-look 98.33% interval is [+0.00, +6.28] |
 
-The follow-ups point to overlap between related emotions in ECERC's input features (Fear with Surprise/Sadness/Anger, Disgust with Anger) as the limit, rather than the decision rule, the loss or the training budget. Much better audio features and correct modality routing (Experiment 6) do not change this; what remains points to the text evidence and the labels themselves.
+The follow-ups point to overlap between related emotions in ECERC's input features (Fear with Surprise/Sadness/Anger, Disgust with Anger) as the limit, rather than the decision rule, the loss or the training budget. Much better audio features and correct modality routing (Experiment 6) do not change this. What did help is evidence from a model with different errors: a zero-shot LLM that never saw MELD's skewed labels (Experiment 7). The gain comes from outside ECERC (the system is "ECERC + LLM"), and it costs some Joy F1.
 
 ---
 
@@ -97,7 +99,7 @@ My contribution:
 - **Analysis of why the interventions did not help:** the precision-recall trade-off on the minority classes and the instability of validation selection with very few minority examples.
 - **Five pre-registered follow-up experiments** ([`research/limitation2/`](research/limitation2/)) testing why the minority classes stay low: post-hoc logit adjustment of all three released checkpoints, a feature label-leak check, training-time representation changes, and fusion with a RoBERTa-large text expert and with a fine-tuned 7B LLM expert.
 - **A sixth:** ECERC retrained, unchanged, on frozen self-supervised speech features in place of its openSMILE audio, with the audio/visual routing fixed. It did not pass its dev gate.
-- **A seventh, pre-registered and not yet run:** ECERC fused with a zero-shot 32B LLM, a partner that has never seen MELD's skewed labels.
+- **A seventh:** ECERC fused with a zero-shot 32B LLM, a partner that has never seen MELD's skewed labels. It is the first confirmed rare-emotion gain in the study: test macro-F1 +3.38 [+0.64, +5.73]. The verdict is TRADE-OFF, because Joy fell 3.3 points.
 
 ## Experimental design
 
@@ -144,7 +146,7 @@ In my environment, R0 scores 67.55 accuracy / 66.58 weighted F1 on test. R0 is a
 │   ├── train_imbalance.py       [mine] training/evaluation for R0, B0, CB, FL, OS, FL+OS
 │   ├── analyze_imbalance.py     [mine] equivalence check, summaries, confusion matrices, pilot rule
 │   └── model.py, train.py, …    upstream ECERC, unchanged
-├── research/limitation2/        [mine] seven pre-registered follow-up experiments (Colab/Kaggle; the seventh not yet run)
+├── research/limitation2/        [mine] seven pre-registered follow-up experiments (Colab/Kaggle)
 │   ├── README.md                results at a glance and how to run each notebook
 │   ├── ECERC_L2_followup_report.pdf  report on follow-up experiments 1–5
 │   ├── PROTOCOL.md              rules and criteria, fixed before each experiment ran
@@ -212,4 +214,4 @@ The experiment scripts import the upstream model, dataset, loss and data loaders
 }
 ```
 
-Methods used: class-balanced loss (Cui et al., CVPR 2019) and focal loss (Lin et al., ICCV 2017). Follow-up experiments: logit adjustment (Menon et al., ICLR 2021), RoBERTa-large (Liu et al., 2019), Qwen2.5-7B-Instruct (Qwen Team, 2024) fine-tuned with QLoRA (Dettmers et al., NeurIPS 2023). Experiment 6 uses the frozen encoders Whisper-large-v3 (Radford et al., ICML 2023), WavLM-large (Chen et al., 2022) and bge-large-en-v1.5 (Xiao et al., 2023), and MELD audio clips from the Hugging Face dataset `ajyy/MELD_audio`. Experiment 7 (pending) uses Qwen2.5-32B-Instruct (Qwen Team, 2024) zero-shot, in a 4-bit copy (`unsloth/Qwen2.5-32B-Instruct-bnb-4bit`). The released checkpoints C2 and C3 are downloaded from the authors' Hugging Face repository (`zt-ai/ECERC`). Dataset: MELD (Poria et al., ACL 2019).
+Methods used: class-balanced loss (Cui et al., CVPR 2019) and focal loss (Lin et al., ICCV 2017). Follow-up experiments: logit adjustment (Menon et al., ICLR 2021), RoBERTa-large (Liu et al., 2019), Qwen2.5-7B-Instruct (Qwen Team, 2024) fine-tuned with QLoRA (Dettmers et al., NeurIPS 2023). Experiment 6 uses the frozen encoders Whisper-large-v3 (Radford et al., ICML 2023), WavLM-large (Chen et al., 2022) and bge-large-en-v1.5 (Xiao et al., 2023), and MELD audio clips from the Hugging Face dataset `ajyy/MELD_audio`. Experiment 7 uses Qwen2.5-32B-Instruct (Qwen Team, 2024) zero-shot, in a 4-bit copy (`unsloth/Qwen2.5-32B-Instruct-bnb-4bit`). The released checkpoints C2 and C3 are downloaded from the authors' Hugging Face repository (`zt-ai/ECERC`). Dataset: MELD (Poria et al., ACL 2019).

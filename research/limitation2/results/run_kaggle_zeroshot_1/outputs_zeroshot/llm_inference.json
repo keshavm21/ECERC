@@ -1,0 +1,62 @@
+{
+  "label_tokens": {
+    "neutral": [
+      " neutral",
+      " Neutral",
+      "neutral",
+      "Neutral"
+    ],
+    "surprise": [
+      " surprise",
+      "sur",
+      "Sur",
+      " Surprise"
+    ],
+    "fear": [
+      "f",
+      " fear",
+      " Fear",
+      "Fear"
+    ],
+    "sadness": [
+      " Sad",
+      " sadness",
+      "Sad",
+      "sad"
+    ],
+    "joy": [
+      "joy",
+      " joy",
+      " Joy",
+      "Joy"
+    ],
+    "disgust": [
+      " Dis",
+      "dis",
+      "Dis",
+      " disgust"
+    ],
+    "anger": [
+      "anger",
+      " Ang",
+      "Ang",
+      " anger"
+    ]
+  },
+  "dev": {
+    "split": "valid",
+    "utterances": 1109,
+    "new_tokens": 58410,
+    "seconds": 2861.7,
+    "label_mass_mean": 0.9941760548986189,
+    "label_mass_min": 0.007966845712727676
+  },
+  "test": {
+    "split": "test",
+    "utterances": 2610,
+    "new_tokens": 138367,
+    "seconds": 6839.2,
+    "label_mass_mean": 0.9981377146663278,
+    "label_mass_min": 0.006662150813672402
+  }
+}

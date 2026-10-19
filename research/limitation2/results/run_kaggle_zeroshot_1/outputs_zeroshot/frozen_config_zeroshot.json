@@ -1,0 +1,207 @@
+{
+  "created": "2026-10-18 19:55:31",
+  "note": "Written before any test-set access. The test evaluation reads its rules from this file.",
+  "code_sha256": {
+    "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+    "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+    "l2_expert.py": "ec165da1ab04aae4348588813d0a7c15cf0ccb06a8834ef6e9d78350f824663a",
+    "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+    "l2_zeroshot.py": "c4785f9391dd7a903fb4dc5d507e598337cac5ed3e26bc8228a02a94ac7f4666",
+    "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+    "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+  },
+  "data_sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80",
+  "ecerc_checkpoints": [
+    {
+      "name": "C1",
+      "sha256": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c",
+      "archive": "ererc0_meld_valf1"
+    },
+    {
+      "name": "C2",
+      "sha256": "47472e9ed138934737d3516be3bd630a16edad14971fe29ce5002e1d7bbdf28c",
+      "archive": "ererc2613_meld_valf1"
+    },
+    {
+      "name": "C3",
+      "sha256": "d5104e06fb050410e0720b9de4310474339cd2494eb98e2f57f9df89a609bf5c",
+      "archive": "ererc659_meld_valloss"
+    }
+  ],
+  "llm": {
+    "model": "unsloth/Qwen2.5-32B-Instruct-bnb-4bit",
+    "revision": "aa79e3472818bdec779075d80928602591d9f2a0",
+    "label_token_ids": [
+      [
+        20628,
+        58694,
+        59568,
+        86907
+      ],
+      [
+        12761,
+        19784,
+        23043,
+        84484
+      ],
+      [
+        69,
+        8679,
+        41967,
+        90371
+      ],
+      [
+        30681,
+        50878,
+        59665,
+        82114
+      ],
+      [
+        4123,
+        15888,
+        27138,
+        79771
+      ],
+      [
+        4093,
+        4243,
+        4839,
+        67062
+      ],
+      [
+        4003,
+        7416,
+        10743,
+        19234
+      ]
+    ],
+    "prompt_sha256": "903ff9c018bfd4db07d250a97cb50c880192827344206f760d680e3a7dfa7016"
+  },
+  "log_q_dev": [
+    -0.7837085675249558,
+    -2.0314275948713796,
+    -3.327382124832013,
+    -2.723580203033934,
+    -1.8390818439082168,
+    -3.0244125609095285,
+    -2.272378137668895
+  ],
+  "log_prior_train": [
+    -0.7517965795216863,
+    -2.115004920607394,
+    -3.618252786021293,
+    -2.6827449069613594,
+    -1.7458767210121289,
+    -3.607120945652449,
+    -2.1980257791817825
+  ],
+  "w_grid": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.0
+  ],
+  "w_star": 0.2,
+  "secondary_uncalibrated_w": 0.2,
+  "gate": {
+    "statistic": "cross-fitted dev gain",
+    "value": 5.6288253200242,
+    "threshold": 0.5,
+    "proceed": true
+  },
+  "forecast": {
+    "fold_w": [
+      0.2,
+      0.25,
+      0.2,
+      0.2,
+      0.2
+    ],
+    "crossfit_delta_macro_f1": 5.6288253200242,
+    "dev_bootstrap_ci95": [
+      1.1746787328760875,
+      9.571574459304827
+    ],
+    "se_test_projected": 1.3642787879943157,
+    "mde80_projected": 3.8199806063840835
+  },
+  "bootstrap": {
+    "B": 10000,
+    "seed": 20261019,
+    "unit": "dialogue",
+    "design": "dev and test resampled independently; w re-selected in every replicate"
+  },
+  "multiplicity": {
+    "test_looks": 3,
+    "note": "the verdict uses the 95% rule; a Bonferroni-adjusted interval is also reported"
+  },
+  "criteria": {
+    "primary": "mean over the three released checkpoints of test macro-F1(fused) - macro-F1(ECERC alone), in points",
+    "success": [
+      "delta >= +1.0",
+      "procedure-level 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of pairs",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  },
+  "device": "cuda",
+  "env": {
+    "python": "3.13.15",
+    "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.16.1",
+    "numpy": "2.1.3",
+    "pandas": "2.3.3",
+    "sklearn": "1.6.1",
+    "device": "cuda",
+    "gpus": [
+      [
+        "Tesla T4",
+        14.6
+      ],
+      [
+        "Tesla T4",
+        14.6
+      ]
+    ],
+    "bitsandbytes": "0.50.2",
+    "accelerate": "1.14.0",
+    "code_sha256": {
+      "dataloader.py": "121db840ea1d57c2814edb061909fcb9c31f9df944f73e1be42b5e6f8c1387ad",
+      "inference.py": "21f7ce13ac1693d51f605ccc6298f1582432fab27dc3b989cdec0a3ba388e28f",
+      "l2_expert.py": "ec165da1ab04aae4348588813d0a7c15cf0ccb06a8834ef6e9d78350f824663a",
+      "l2_posthoc.py": "83c5058df24fd742a50709a78102424ed62e4e4d42799224df085382f187a30b",
+      "l2_zeroshot.py": "c4785f9391dd7a903fb4dc5d507e598337cac5ed3e26bc8228a02a94ac7f4666",
+      "loss.py": "c348375c27c366e11f2509de30dd0c5c0f224adcf0eb434bc0d0d9fa12045246",
+      "model.py": "a09dbe3aa6fd662237fb9833a0544887e9441e46a08783ca39b363d97d6ccc32"
+    }
+  }
+}

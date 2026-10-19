@@ -1,0 +1,28 @@
+{
+  "checkpoints": [
+    {
+      "name": "C1",
+      "sha256": "0f44a6e546592a3f7843342c0f72dcfa591eab1f99cdbd8a7d4ea7aed607441c",
+      "archive": "ererc0_meld_valf1",
+      "flagged_test_selection": false
+    },
+    {
+      "name": "C2",
+      "sha256": "47472e9ed138934737d3516be3bd630a16edad14971fe29ce5002e1d7bbdf28c",
+      "archive": "ererc2613_meld_valf1",
+      "flagged_test_selection": false
+    },
+    {
+      "name": "C3",
+      "sha256": "d5104e06fb050410e0720b9de4310474339cd2494eb98e2f57f9df89a609bf5c",
+      "archive": "ererc659_meld_valloss",
+      "flagged_test_selection": false
+    }
+  ],
+  "data": {
+    "file": "meld_emotion_semantic_features_roberta.pkl",
+    "google_drive_id": "1IQokygWgjaZuSXvCsfIcUzj1Gu69hDCb",
+    "bytes": 509327864,
+    "sha256": "a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80"
+  }
+}

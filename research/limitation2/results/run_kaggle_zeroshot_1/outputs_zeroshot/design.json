@@ -1,0 +1,66 @@
+{
+  "llm": {
+    "model": "unsloth/Qwen2.5-32B-Instruct-bnb-4bit",
+    "revision": "aa79e3472818bdec779075d80928602591d9f2a0"
+  },
+  "prompt": {
+    "system": "You are an expert annotator of emotions in TV-show dialogue.",
+    "question": "Which emotion does {who} express in the last line? Answer with one word: neutral, surprise, fear, sadness, joy, disgust, or anger.",
+    "sha256": "903ff9c018bfd4db07d250a97cb50c880192827344206f760d680e3a7dfa7016",
+    "context": "past turns and the target, \"Speaker k: text\", generic speaker labels"
+  },
+  "scoring": "next-token log-probabilities of the first tokens of each label word (4 spellings), log-sum-exp per class, renormalised over the seven classes",
+  "calibration": "prior matching: p~ \u221d p / q * prior_train, q = the LLM's mean prediction on the dev inputs (label-free), frozen before the test",
+  "fusion": "score = (1 - w) log p_ECERC + w log p~_LLM",
+  "w_grid": [
+    0.0,
+    0.05,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3,
+    0.35,
+    0.4,
+    0.45,
+    0.5,
+    0.55,
+    0.6,
+    0.65,
+    0.7,
+    0.75,
+    0.8,
+    0.85,
+    0.9,
+    0.95,
+    1.0
+  ],
+  "selection": "highest mean dev macro-F1 over the three checkpoints; ties to the smaller w",
+  "gate": "cross-fitted dev gain >= 0.5",
+  "test_looks": 3,
+  "secondary": [
+    "fusion without calibration (its own dev-chosen w; test-only CI)",
+    "LLM alone"
+  ],
+  "pilot": "dev-only pilot with Qwen2.5-3B-Instruct (2026-10-19), see PROTOCOL.md",
+  "criteria": {
+    "primary": "mean over the three released checkpoints of test macro-F1(fused) - macro-F1(ECERC alone), in points",
+    "success": [
+      "delta >= +1.0",
+      "procedure-level 95% CI lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of pairs",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported"
+  }
+}

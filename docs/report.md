@@ -38,7 +38,7 @@ The evidence points to overlap between related emotions in the input features an
 
 A sixth follow-up tested the input-feature explanation directly (§8.7). It retrained the unchanged ECERC on frozen self-supervised speech features in place of its openSMILE audio, and also corrected the audio/visual input routing. The new audio features are much stronger on their own, but no variant moved dev macro-F1 (best +0.08, against a +0.5 gate), so the test set was not used.
 
-A seventh follow-up, pre-registered on 2026-10-19 and **not yet run**, fuses ECERC with a zero-shot 32B LLM that has never been trained on MELD's labels (§8.8).
+A seventh follow-up fused ECERC with a zero-shot 32B LLM that has never been trained on MELD's labels (§8.8). It gave the study's first confirmed gain on the rare emotions. Test macro-F1 rose from 50.87 to 54.25 (Δ +3.38, 95% CI [+0.64, +5.73]), positive with every released checkpoint, with Fear F1 +7.6, Disgust +8.8 and Sadness +5.7, and accuracy and weighted F1 up slightly. The pre-registered verdict is TRADE-OFF, because Joy fell 3.3 points.
 
 ---
 
@@ -389,8 +389,8 @@ Code, protocol and raw outputs: [`research/limitation2/`](../research/limitation
 
 These experiments differ from Stages 0–2 in three ways:
 
-- **Models.** Experiments 1, 2, 4 and 5 use the **three released checkpoints** (C1 = `ECERC_MODEL.pkl` = R0, C2, C3), not the B0 retrainings. Experiments 3 and 6 retrain ECERC with their own seeds.
-- **Selection.** Stages 0–2 select each run's epoch by validation weighted F1. Experiments 3 and 6 select by validation macro-F1, and Experiments 1, 4 and 5 choose their single tuning parameter by mean dev macro-F1.
+- **Models.** Experiments 1, 2, 4, 5 and 7 use the **three released checkpoints** (C1 = `ECERC_MODEL.pkl` = R0, C2, C3), not the B0 retrainings. Experiments 3 and 6 retrain ECERC with their own seeds.
+- **Selection.** Stages 0–2 select each run's epoch by validation weighted F1. Experiments 3 and 6 select by validation macro-F1, and Experiments 1, 4, 5 and 7 choose their single tuning parameter by mean dev macro-F1.
 - **Statistics.** Confidence intervals come from dialogue-level bootstrap, so they cover test-sampling noise (and, where stated, re-selection on dev).
 
 | # | Experiment | Test used? | Verdict |
@@ -401,7 +401,7 @@ These experiments differ from Stages 0–2 in three ways:
 | 4 | RoBERTa-large text expert fused with ECERC | yes | INCONCLUSIVE |
 | 5 | Qwen2.5-7B LLM expert fused with ECERC | no (dev gate) | gate not passed |
 | 6 | Self-supervised audio evidence for ECERC | no (dev gate) | gate not passed |
-| 7 | Zero-shot LLM fused with ECERC (§8.8) | — | pending: pre-registered, not yet run |
+| 7 | Zero-shot LLM fused with ECERC (§8.8) | yes | TRADE-OFF: macro-F1 +3.38 [+0.64, +5.73]; Joy guardrail fails |
 
 ### 8.1 Experiment 1: post-hoc logit adjustment
 
@@ -513,14 +513,42 @@ The best arm gained +0.08 against a +0.5 gate, so **the test set was not used**.
 
 Per-run details are in [`FINDINGS.md`](../research/limitation2/results/FINDINGS.md).
 
-### 8.8 Experiment 7 (pre-registered, not yet run): a zero-shot LLM fused with ECERC
+### 8.8 Experiment 7: a zero-shot LLM fused with ECERC
 
 Experiments 4 to 6 share one failure mode. Every second source of evidence (a RoBERTa expert and an LLM, both trained on MELD's labels, and better audio) traded one class for another. A zero-shot LLM is never trained on MELD's skewed labels. Published zero-shot results on the MELD test set show the error profile ECERC lacks: LLaMA-70B reaches Fear 33.3, Disgust 39.8 and Sadness 47.3 F1, against ECERC's 26.1, 31.4 and 41.0, while it is weaker on Neutral and Joy.
 
 - **Pilot (dev only).** A zero-shot 3B model run locally was weak on its own (dev macro-F1 35.6). Fused with the released checkpoints, it had a cross-fitted dev gain of −0.91 as is, and +0.76 after a label-free calibration: its mean dev prediction was replaced by the training prior. See [`pilot_local_zeroshot_3b/`](../research/limitation2/results/pilot_local_zeroshot_3b/README.md).
 - **Design.** Qwen2.5-32B-Instruct (4-bit, frozen) scores every dev and test utterance with past context only, using the pilot's fixed prompt. It is calibrated the same way, with the calibration frozen on dev, and fused with C1–C3 by Experiment 4's procedure: one weight chosen on dev, a cross-fitted +0.5 gate, and one test pass. This would be the third test look, so a Bonferroni-adjusted interval is reported too.
 
-The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-19), and the notebook is `research/limitation2/notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb`.
+The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-19, committed three minutes before the run), and the notebook is `research/limitation2/notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb`.
+
+**Run.** Kaggle 2× T4, 2026-10-18 (UTC), 2 h 45 min.
+
+- All 18 integrity checks passed.
+- The cross-fitted dev gain was +5.63, so the gate passed. The dev-chosen weight w = 0.2 was stable: it was chosen in four of five dev folds and in 75% of the test bootstrap replicates.
+- The test set was evaluated once.
+
+| Test, mean of C1–C3 | Accuracy | Weighted F1 | Macro-F1 | Fear F1 | Sadness F1 | Disgust F1 | Joy F1 |
+|---|---|---|---|---|---|---|---|
+| ECERC alone | 67.32 | 66.46 | 50.87 | 26.12 | 40.95 | 31.43 | 64.95 |
+| **ECERC + zero-shot LLM** | **68.24** | **67.26** | **54.25** | **33.77** | **46.69** | **40.22** | 61.67 |
+| Zero-shot LLM alone | 63.10 | 63.14 | 51.05 | 31.88 | 45.38 | 37.58 | 55.57 |
+
+- **Δ macro-F1: +3.38, 95% CI [+0.64, +5.73]**, with w re-selected in every bootstrap replicate. It is positive for all three checkpoints (+2.83, +3.65, +3.65).
+- **Per class:**
+  - Disgust +8.79 [+0.18, +16.22], Sadness +5.74 [+0.10, +11.46] and Fear +7.64 [−3.10, +18.14].
+  - Accuracy +0.92 and weighted F1 +0.80; both CIs include 0.
+  - Joy −3.28 [−7.49, +1.07]. This breaks the pre-registered −2.0 class guardrail, so the verdict is **TRADE-OFF** rather than SUCCESS.
+- **Third look.** This was the test set's third look. The Bonferroni-adjusted 98.33% interval is [+0.00, +6.28], so its lower bound reaches zero but does not exceed it.
+- **Why it worked where Experiments 4 and 5 did not.**
+  - On its own, the zero-shot LLM matches ECERC on macro-F1 (51.05 vs 50.87), with the opposite error profile. It is much better on Disgust, Fear and Sadness and much worse on Neutral and Joy.
+  - Its per-class scores closely match published zero-shot Qwen-32B results on MELD.
+  - The experts trained on MELD's labels shared ECERC's skew. This partner does not.
+  - The label-free calibration step, which mattered for the 3B pilot, made almost no difference for the 32B model. Without it, the gain is +3.27.
+- **Caveats.**
+  - The improved system is ECERC plus a 32B LLM, not a change to ECERC itself.
+  - The LLM's pretraining may include Friends transcripts or MELD's public files. On its own, though, it is not better than ECERC overall: weighted F1 is 63.1 vs 66.5.
+  - The pilot that fixed the prompt used dev, so the dev gate was not independent of it.
 
 ## 9. Limitations of this study
 
@@ -530,13 +558,18 @@ The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum 
 - **One checkpoint.** In Stages 0–2, R0 covers one of the three released checkpoints. The follow-up Experiment 1 covers all three (§8.1).
 - **Inherited modality order.** The upstream MELD audio/visual slot order was kept for comparability with the released checkpoint.
 - **Seed-0 overlap.** The Stage 2 seed-0 runs of CB0.999, FL2 and OS2 are the pilot runs used to choose β and ρ (§6).
+- **Three test looks in the follow-ups.** The MELD test set was evaluated in Experiments 1, 4 and 7. Each verdict uses its own pre-registered 95% rule. Experiment 7's Bonferroni-adjusted interval reaches zero.
+- **An external model in Experiment 7.** Its gain depends on a 32B LLM whose pretraining data are not public in detail.
 - **Calibration not measured in Stages 0–2.** Follow-up Experiment 1 computed NLL and ECE for the released checkpoints (dev only); they are in its saved outputs but not discussed here.
 
 ## 10. Possible further work
 
 Two of the follow-ups proposed in the first version of this report were carried out in §8: post-hoc per-class decision-rule changes (Experiment 1) and representation-level methods, including a confusion-aware contrastive term on the fused features (Experiment 3). Neither helped. Still open:
 
-- **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points. Much stronger audio features inside ECERC itself did not help either (Experiment 6, §8.7); what remains points to the text evidence and the labels.
+- **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points. Much stronger audio features inside ECERC itself did not help either (Experiment 6, §8.7). A zero-shot LLM partner did (Experiment 7, §8.8). Natural next steps are to:
+  - distil its predictions into ECERC, so that no LLM is needed at inference;
+  - reduce the Joy cost, for example with class-specific fusion weights chosen on more data than MELD's dev set;
+  - test the fusion on a second dataset.
 - **Decoupled classifier re-training** (e.g. cRT) and **more seeds** per configuration, which were not tried.
 - **Label ambiguity.** How much of the minority-class error comes from MELD's annotation disagreement was not measured.
 

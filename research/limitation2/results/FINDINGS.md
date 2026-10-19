@@ -297,3 +297,86 @@ Mean over the last five epochs, a measure that does not pick a lucky epoch: A0 5
    correct modality routing (6). The same direction of class trading appeared with new text evidence on test in
    experiment 4 (Sadness +2.23, Joy −2.61). What remains points to the text evidence and the labels themselves:
    overlap between related emotions and annotator agreement κ = 0.43.
+
+---
+
+# Findings: run_kaggle_zeroshot_1 (Experiment 7, a zero-shot LLM fused with ECERC)
+
+**Run:** 2026-10-18, 19:04–21:49 on the Kaggle clock (UTC), on 2× Tesla T4, 2 hours 45 minutes in total.
+- Loading the 4-bit 32B model across both GPUs took 3 minutes, the dev pass 48 and the test pass 114.
+- The pre-registration (PROTOCOL.md addendum dated 2026-10-19 in local time, commit `0ce34f3`) was committed at
+  19:01 UTC, three minutes before the run started.
+- Outputs are in `run_kaggle_zeroshot_1/outputs_zeroshot/`.
+
+**Integrity:**
+- All 18 checks passed, with no warnings.
+  - The checkpoints and the data file match their pinned SHA-256.
+  - The LLM is `unsloth/Qwen2.5-32B-Instruct-bnb-4bit` at revision `aa79e347`, spread over both GPUs.
+  - The label words start with distinct tokens.
+  - They received 99.4% (dev) and 99.8% (test) of the next-token probability on average.
+- The freeze (19:55:31) preceded the single test pass.
+- This was the MELD test set's **third look**, after experiments 1 and 4.
+
+## Verdict: TRADE-OFF (pre-registered rules)
+Every efficacy, minority and consistency condition is met, as are the accuracy and weighted-F1 guardrails. The
+per-class guardrail fails: Joy F1 fell by 3.28, beyond the −2.0 limit.
+
+| Test, mean over the three released checkpoints | Accuracy | Weighted F1 | Macro-F1 | Fear F1 | Sadness F1 | Disgust F1 | Joy F1 |
+|---|---|---|---|---|---|---|---|
+| ECERC alone | 67.32 | 66.46 | 50.87 | 26.12 | 40.95 | 31.43 | 64.95 |
+| **ECERC + zero-shot LLM (w = 0.2)** | **68.24** | **67.26** | **54.25** | **33.77** | **46.69** | **40.22** | 61.67 |
+| Zero-shot LLM alone (calibrated) | 63.10 | 63.14 | 51.05 | 31.88 | 45.38 | 37.58 | 55.57 |
+
+- **Δ macro-F1: +3.38 [95% CI +0.64, +5.73].** The CI is the pre-registered procedure-level dialogue bootstrap, which
+  re-selects w in every replicate.
+- **Consistency:** Δ is positive for all three checkpoints (+2.83, +3.65, +3.65).
+- **Overall metrics:**
+  - Accuracy +0.92 [−0.96, +2.50].
+  - Weighted F1 +0.80 [−1.00, +2.40].
+- **Per class (Δ F1 [95% CI]):**
+  - Disgust +8.79 [+0.18, +16.22].
+  - Fear +7.64 [−3.10, +18.14].
+  - Sadness +5.74 [+0.10, +11.46].
+  - Surprise +3.23 [−0.29, +6.54].
+  - Anger +1.72 [−2.71, +6.45].
+  - Neutral −0.21 [−1.89, +1.27].
+  - Joy −3.28 [−7.49, +1.07].
+- **Third-look adjustment:** the Bonferroni 98.33% interval is [+0.00, +6.28]. Its lower bound reaches 0 rather than
+  exceeding it; the bootstrap replicates that select w = 0 (0.16% of them) give exactly zero difference.
+- **Dev:**
+  - The cross-fitted dev gain was +5.63 (gate +0.5).
+  - The selected weight is stable: w = 0.2 was chosen in 4 of 5 dev folds (0.25 in the fifth) and in 75% of the test
+    bootstrap replicates (0.25 in 18%).
+- **Secondary:**
+  - Fusion without the calibration step, at its own dev-chosen w = 0.2, gives +3.27 [+0.77, +5.75] (test-only CI).
+  - The raw LLM alone scores macro-F1 50.91 and weighted F1 62.93.
+
+## Interpretation
+1. **This is the first intervention in the study to raise ECERC's rare-emotion F1 by a confirmed margin.**
+   - Macro-F1 rises by 3.4 points, with the 95% CI excluding zero, and it rises with every checkpoint.
+   - Fear, Disgust and Sadness, the classes Limitation 2 is about, gain 5.7 to 8.8 F1 points.
+   - Accuracy and weighted F1 rise too, so the gain is not bought with overall performance.
+   - The fused system's test accuracy (68.24) and weighted F1 (67.26) are above the ECERC paper's Table 3 (67.32 /
+     66.46).
+2. **Why it worked where experiments 4 and 5 did not:**
+   - The zero-shot LLM was never trained on MELD's labels, so its errors are not ECERC's errors.
+   - On test it alone, without calibration, matches ECERC on macro-F1 (50.91 against 50.87) with the opposite
+     profile: much better on
+     Disgust (38.4 against 31.4), Fear and Sadness, much worse on Neutral (74.7 against 79.8) and Joy (55.3 against
+     65.0).
+   - The experts fine-tuned on MELD (experiment 4, +0.27; experiment 5, gate not passed) shared ECERC's label skew.
+   - Its per-class profile closely matches the published zero-shot Qwen-32B results on the MELD test set (for
+     example, Disgust 38.4 against 38.9, Anger 52.6 against 52.8). The scoring pipeline therefore behaves like
+     ordinary zero-shot prompting.
+3. **The cost is Joy.** Joy is the class the LLM recognises worst relative to ECERC. Its F1 falls 3.28 points; its CI
+   includes 0, but the point estimate breaks the pre-registered −2.0 guardrail, hence TRADE-OFF rather than SUCCESS.
+4. **The calibration step mattered for the 3B pilot, not for the 32B model.** Fusion without it is within 0.1 points
+   (+3.27 against +3.38).
+5. **Caveats:**
+   - The system is "ECERC + a zero-shot LLM", not a change to ECERC itself.
+   - The LLM's pretraining may include Friends transcripts or the public MELD files, which cannot be excluded. Alone,
+     though, it is no better than ECERC overall (weighted F1 62.93 against 66.46), which argues against strong label
+     memorisation.
+   - This was the third test look, and the multiplicity-adjusted interval only reaches zero.
+   - The dev pilot that fixed the prompt used dev, so the dev gate was not independent of it; the test pass was
+     single and pre-registered.
