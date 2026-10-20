@@ -1,0 +1,19 @@
+{
+  "llm": {
+    "model": "unsloth/Qwen2.5-32B-Instruct-bnb-4bit",
+    "revision": "aa79e3472818bdec779075d80928602591d9f2a0"
+  },
+  "prompt": {
+    "system": "You are an expert annotator of emotions in TV-show dialogue.",
+    "question": "Which emotion does {who} express in the last line? Answer with one word: neutral, surprise, fear, sadness, joy, disgust, or anger.",
+    "sha256": "903ff9c018bfd4db07d250a97cb50c880192827344206f760d680e3a7dfa7016"
+  },
+  "scoring": "Experiment 7's, unchanged (l2_zeroshot.llm_logprobs)",
+  "split_scored": "train",
+  "reproducibility": {
+    "dev_dialogues": 20,
+    "min_argmax_agreement": 0.95,
+    "reference": "dev_llm.npz"
+  },
+  "test": "not scored; no test label is read"
+}

@@ -1,0 +1,71 @@
+{
+  "label_tokens": {
+    "neutral": [
+      " neutral",
+      " Neutral",
+      "neutral",
+      "Neutral"
+    ],
+    "surprise": [
+      " surprise",
+      "sur",
+      "Sur",
+      " Surprise"
+    ],
+    "fear": [
+      "f",
+      " fear",
+      " Fear",
+      "Fear"
+    ],
+    "sadness": [
+      " Sad",
+      " sadness",
+      "Sad",
+      "sad"
+    ],
+    "joy": [
+      "joy",
+      " joy",
+      " Joy",
+      "Joy"
+    ],
+    "disgust": [
+      " Dis",
+      "dis",
+      "Dis",
+      " disgust"
+    ],
+    "anger": [
+      "anger",
+      " Ang",
+      "Ang",
+      " anger"
+    ]
+  },
+  "reproducibility": {
+    "dialogues": 20,
+    "utterances": 229,
+    "reference_sha256": "4b3554af94e625929bf74b9b4bed2010c529fcd4e3a5f018ab78b3a79511c242",
+    "argmax_agreement": 1.0,
+    "max_abs_diff": 1.3121455282316674e-06,
+    "mean_abs_diff": 2.6972557361975024e-07
+  },
+  "repro_dev": {
+    "split": "repro_dev",
+    "utterances": 229,
+    "new_tokens": 12096,
+    "seconds": 605.5,
+    "label_mass_mean": 0.9999398530574829,
+    "label_mass_min": 0.9965613880416292
+  },
+  "train": {
+    "split": "train",
+    "utterances": 9989,
+    "new_tokens": 526792,
+    "seconds": 26713.2,
+    "label_mass_mean": 0.9978954101933134,
+    "label_mass_min": 0.000667956323585506
+  },
+  "train_llm_npz_sha256": "8c810de775b0e5a6cbac1c4f4a56aed8648d55469e7e709fc19d5147c1d586ae"
+}

@@ -20,7 +20,9 @@
     "src/l2_llm.py": "3c969349a8f6bd2745845f184d5c9fde40a06d25a6c65694faf69cd74ce1d7cf",
     "src/l2_llm_worker.py": "154187d9700acdf300f8ea33398f229306621ef446502393d199a0b6c7169635",
     "src/l2_audio.py": "e3a3f04cea0debbc3ce9f32e719e4781725353518aa18f9a3c4d5e2cc5c7c814",
-    "src/l2_zeroshot.py": "c4785f9391dd7a903fb4dc5d507e598337cac5ed3e26bc8228a02a94ac7f4666"
+    "src/l2_zeroshot.py": "c4785f9391dd7a903fb4dc5d507e598337cac5ed3e26bc8228a02a94ac7f4666",
+    "src/l2_distill_teacher.py": "861cb12493ac2111598e5e56bde47a6ca3d5aba56cd0b560f9de0db54ae3984c",
+    "src/l2_distill.py": "4a1244b5b46a03a19fd8049785ed608a4817addaffdb9ae06fea0888d8594be4"
   },
   "notebook": {
     "notebooks/ECERC_L2_posthoc_LA.ipynb": "98f812e39b8a254b3f081b6666b049cd280f1465a164522f1b8e481334332003",
@@ -29,7 +31,9 @@
     "notebooks/ECERC_L2_expert_fusion.ipynb": "e5e83e38cb924e6016cba88e9f026bf64b7a29c740a67b60c21bc304dbd22cf6",
     "notebooks/ECERC_L2_llm_fusion.ipynb": "75d85e0b422b3b223f701ec5524e2ff25846b90096a89fb867f2c316d08eb430",
     "notebooks/ECERC_L2_audio_evidence.ipynb": "84b0336f3cf3b47d7605ec4f12a32d0a8a79ce76a66d07befc59f52aa0e5168b",
-    "notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb": "12346b0ac3af107227eb18a9470c4d302e94eb090d4a93c937b13ddb091de6e0"
+    "notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb": "12346b0ac3af107227eb18a9470c4d302e94eb090d4a93c937b13ddb091de6e0",
+    "notebooks/ECERC_L2_distill_teacher.ipynb": "9965e6147923b65ae94b8069403c64f7e4701db4735312058816aad46541862e",
+    "notebooks/ECERC_L2_distill_student.ipynb": "b436eca0dedc27060c7eb2f5b15fa60a034803098e11207ffeb82e77586b181d"
   },
   "checkpoints": {
     "C1": {
@@ -110,5 +114,14 @@
     "safetensors_gb": 19.2,
     "url": "https://huggingface.co/unsloth/Qwen2.5-32B-Instruct-bnb-4bit",
     "note": "experiment 7: frozen, zero-shot; loaded at the pinned revision"
+  },
+  "distillation_teacher": {
+    "zeroshot_dev_dump": {
+      "results/run_kaggle_zeroshot_1/outputs_zeroshot/dumps/dev_llm.npz": "4b3554af94e625929bf74b9b4bed2010c529fcd4e3a5f018ab78b3a79511c242"
+    },
+    "train_llm": {
+      "results/run_kaggle_distill_teacher_1/outputs_distill_teacher/dumps/train_llm.npz": "8c810de775b0e5a6cbac1c4f4a56aed8648d55469e7e709fc19d5147c1d586ae"
+    },
+    "note": "experiment 8: notebook 8b embeds both files and refuses any other train_llm.npz"
   }
 }

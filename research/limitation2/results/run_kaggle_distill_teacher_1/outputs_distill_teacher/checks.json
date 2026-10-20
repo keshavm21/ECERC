@@ -1,0 +1,104 @@
+[
+  {
+    "name": "GPU memory is enough for the 4-bit LLM (>= 28 GB in total)",
+    "passed": true,
+    "hard": true,
+    "detail": "[('Tesla T4', 14.6), ('Tesla T4', 14.6)]; on Kaggle choose Accelerator -> GPU T4 x2"
+  },
+  {
+    "name": "data file is identical to the one used in run_colab_1",
+    "passed": true,
+    "hard": false,
+    "detail": "a0349614b2b58e8b"
+  },
+  {
+    "name": "data file has the 17 fields read by MELD/dataloader.py",
+    "passed": true,
+    "hard": true,
+    "detail": "type=list"
+  },
+  {
+    "name": "dialogue IDs are disjoint across splits",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "utterance counts per split match MELD",
+    "passed": true,
+    "hard": false,
+    "detail": "{'train': 9989, 'valid': 1109, 'test': 2610}"
+  },
+  {
+    "name": "dialogue counts per split match MELD",
+    "passed": true,
+    "hard": false,
+    "detail": "{'train': 1038, 'valid': 114, 'test': 280}"
+  },
+  {
+    "name": "feature dimensions fit the released model (text 1024, audio+visual 642, 9 speakers)",
+    "passed": true,
+    "hard": true,
+    "detail": "{'eroberta1': 1024, 'sroberta1': 1024, 'videoVisual': 342, 'videoAudio': 300, 'speakers': 9}"
+  },
+  {
+    "name": "train/dev labels are in 0..6",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train/dev label lengths match feature lengths",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "train label counts match the MELD paper",
+    "passed": true,
+    "hard": false,
+    "detail": "[4710, 1205, 268, 683, 1743, 271, 1109]"
+  },
+  {
+    "name": "utterance text is present for every train and dev utterance (label-free check)",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "label words start with distinct tokens",
+    "passed": true,
+    "hard": true,
+    "detail": "{'neutral': [' neutral', ' Neutral', 'neutral', 'Neutral'], 'surprise': [' surprise', 'sur', 'Sur', ' Surprise'], 'fear': ['f', ' fear', ' Fear', 'Fear'], 'sadness': [' Sad', ' sadness', 'Sad', 'sad'], 'joy': ['joy', ' joy', ' Joy', 'Joy'], 'disgust': [' Dis', 'dis', 'Dis', ' disgust'], 'anger': ['anger', ' Ang', 'Ang', ' anger']}"
+  },
+  {
+    "name": "label token ids equal Experiment 7's frozen ids",
+    "passed": true,
+    "hard": true,
+    "detail": ""
+  },
+  {
+    "name": "prompt equals Experiment 7's (SHA-256)",
+    "passed": true,
+    "hard": true,
+    "detail": "903ff9c018bfd4db"
+  },
+  {
+    "name": "dev re-scoring reproduces Experiment 7 (argmax agreement >= 0.95)",
+    "passed": true,
+    "hard": true,
+    "detail": "100.0% of 229 utterances; max |diff| 0.0000"
+  },
+  {
+    "name": "one row per training utterance",
+    "passed": true,
+    "hard": true,
+    "detail": "9989 rows"
+  },
+  {
+    "name": "the seven label words carry most of the next-token probability on train",
+    "passed": true,
+    "hard": false,
+    "detail": "mean 0.998"
+  }
+]
