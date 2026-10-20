@@ -22,6 +22,8 @@ EXPERT_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_expert_fusion.ipynb'
 LLM_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_llm_fusion.ipynb')
 AUDIO_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_audio_evidence.ipynb')
 ZEROSHOT_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_zeroshot_llm_fusion.ipynb')
+DISTILL_TEACHER_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_distill_teacher.ipynb')
+DISTILL_NOTEBOOK = os.path.join(ROOT, 'notebooks', 'ECERC_L2_distill_student.ipynb')
 OBSERVED_DATA_SHA = 'a0349614b2b58e8b2db768f0144aa36b96fb2348ca436a6879ee2623cc2d2f80'  # run_colab_1
 HF = 'https://huggingface.co/zt-ai/ECERC/resolve/main/MELD/'
 CHECKPOINTS = [
@@ -51,6 +53,13 @@ TEXT_ENCODER = dict(name='bge-large-en-v1.5', repo='BAAI/bge-large-en-v1.5',
 # Experiment 7: a pre-quantized 4-bit (bitsandbytes NF4) copy of Qwen/Qwen2.5-32B-Instruct, pinned to a revision.
 ZEROSHOT_LLM = dict(repo='unsloth/Qwen2.5-32B-Instruct-bnb-4bit', revision='aa79e3472818bdec779075d80928602591d9f2a0',
                     base='Qwen/Qwen2.5-32B-Instruct', license='apache-2.0', safetensors_gb=19.2)
+# Experiment 8: Experiment 7's saved dev log-probabilities and frozen calibration, and notebook 8a's output.
+ZEROSHOT_DEV_DUMP = os.path.join(ROOT, 'results', 'run_kaggle_zeroshot_1', 'outputs_zeroshot', 'dumps', 'dev_llm.npz')
+ZEROSHOT_DEV_DUMP_SHA = '4b3554af94e625929bf74b9b4bed2010c529fcd4e3a5f018ab78b3a79511c242'
+ZEROSHOT_FROZEN = os.path.join(ROOT, 'results', 'run_kaggle_zeroshot_1', 'outputs_zeroshot', 'frozen_config_zeroshot.json')
+DISTILL_TEACHER_DUMP = os.path.join(ROOT, 'results', 'run_kaggle_distill_teacher_1', 'outputs_distill_teacher', 'dumps',
+                                    'train_llm.npz')
+EXP6_A0_DEV = {101: 55.1213, 102: 54.0365, 103: 53.2054, 104: 54.8434, 105: 53.4294}  # stage1_runs.csv of run_kaggle_audio_1
 ENCODER_WEIGHTS = {  # documentation only: the notebook loads each repository at the pinned revision
     'openai/whisper-large-v3': dict(file='model.safetensors', bytes=3087130976, license='apache-2.0',
                                     sha256='a8e94b85976e5864ba3e9525c7e6c83b2a1eca42d4b797a0c7c24d778e40fd95'),
@@ -868,6 +877,223 @@ except ImportError:
     return files
 
 
+DISTILL_TEACHER_CONFIG_CELL = """
+# ===== Configuration: leave as is. (Set TRUST_DATA_PICKLE = True only if the data cell asks you to.) =====
+import os
+
+TRUST_DATA_PICKLE = False
+
+if os.path.isdir('/kaggle/working'):
+    WORK_DIR = '/kaggle/working/ecerc_l2'
+elif os.path.isdir('/content'):
+    WORK_DIR = '/content/ecerc_l2'
+else:
+    WORK_DIR = os.path.abspath('ecerc_l2_work')
+CONFIG = dict(
+    work_dir=WORK_DIR,
+    cache_dir='/tmp/ecerc_l2_cache',        # the 19 GB model download; not part of the saved output
+    data_file_id='%(data_id)s',            # authors' Google Drive (linked from the official ECERC README)
+    data_filename='%(data_name)s',
+    expected_data_sha256='%(data_sha)s',  # observed in run_colab_1
+    trust_data_pickle=TRUST_DATA_PICKLE,
+    expected_split_utterances=dict(train=9989, valid=1109, test=2610),
+    expected_split_dialogues=dict(train=[1038, 1039], valid=114, test=280),
+    llm_model='%(llm_repo)s',  # 4-bit copy of %(llm_base)s, as in Experiment 7
+    llm_revision='%(llm_rev)s',
+    llm_max_memory='13GiB',                 # per GPU; the 4-bit weights are about 19 GB in total
+    llm_min_gpu_gb=28,                      # two T4s; one 16 GB GPU is not enough
+    expected_label_token_ids=%(label_ids)s,
+    expected_prompt_sha256='%(prompt_sha)s',
+    reference_dev_dump='embedded',          # Experiment 7's dev log-probabilities (dev_llm.npz, embedded below)
+    repro_dialogues=20, repro_min_agreement=0.95,
+    offline=False,                          # True only for the local smoke test
+)
+os.makedirs(WORK_DIR, exist_ok=True)
+print('Working directory:', WORK_DIR)
+"""
+
+
+def build_distill_teacher():
+    files = {n: os.path.join(ROOT, 'src', n) for n in ('l2_posthoc.py', 'l2_pathb.py', 'l2_expert.py', 'l2_zeroshot.py',
+                                                       'l2_distill_teacher.py')}
+    assert sha256(ZEROSHOT_DEV_DUMP) == ZEROSHOT_DEV_DUMP_SHA
+    files['dev_llm.npz'] = ZEROSHOT_DEV_DUMP
+    code_cell = code_files_cell(
+        files, '# Writes the analysis code and Experiment 7\'s dev log-probabilities, checks their SHA-256, then sets up.\n',
+        'import l2_posthoc\nimportlib.reload(l2_posthoc)\nimport l2_pathb\nimportlib.reload(l2_pathb)\n'
+        'import l2_expert\nimportlib.reload(l2_expert)\nimport l2_zeroshot\nimportlib.reload(l2_zeroshot)\n'
+        'import l2_distill_teacher as LT\nimportlib.reload(LT)\nS = LT.stage_setup(CONFIG, CODE_DIR)\n')
+    with open(ZEROSHOT_FROZEN) as f:
+        frozen = json.load(f)
+    cells = [
+        md("""
+# ECERC Limitation 2, Experiment 8a: zero-shot LLM soft labels for the training split
+
+Experiment 7 improved ECERC by fusing it with a frozen zero-shot LLM **at inference**. Experiment 8 asks whether a single ECERC model, trained with that LLM's soft labels, keeps part of the gain **without** the LLM. This first notebook only produces the soft labels. It runs the same LLM as Experiment 7 (Qwen2.5-32B-Instruct, 4-bit, same revision, prompt and scoring) on every utterance of the **training** dialogues.
+
+- No label of any split is given to the LLM. The test split is not scored and its labels are not read.
+- Before the long pass, the first 20 dev dialogues are scored again and compared with Experiment 7's saved output, to confirm the model is the same.
+- The output `train_llm.npz` goes into the second notebook (8b), which trains and evaluates ECERC.
+
+Expect about 7.5 hours on Kaggle **GPU T4 x2** (the model needs both GPUs) with Internet **On**. Run it with **Save Version → Save & Run All (Commit)**.
+"""),
+        code(DISTILL_TEACHER_CONFIG_CELL % dict(data_id=DATA_FILE_ID, data_name=DATA_FILENAME, data_sha=OBSERVED_DATA_SHA,
+                                                llm_repo=ZEROSHOT_LLM['repo'], llm_base=ZEROSHOT_LLM['base'],
+                                                llm_rev=ZEROSHOT_LLM['revision'],
+                                                label_ids=frozen['llm']['label_token_ids'],
+                                                prompt_sha=frozen['llm']['prompt_sha256'])),
+        md("""
+## 1. Code
+`l2_posthoc.py`, `l2_pathb.py`, `l2_expert.py` and `l2_zeroshot.py` from the earlier experiments (unchanged), `l2_distill_teacher.py`, and Experiment 7's dev log-probabilities, embedded as base64 and checked by SHA-256. Readable copies are in `research/limitation2/`.
+"""),
+        code(code_cell),
+        md("""
+## 2. MELD features (authors' Google Drive) and data checks (only train and dev labels are read)
+"""),
+        code('LT.stage_prepare(S)'),
+        md("""
+## 3. The LLM: checks against Experiment 7, dev re-scoring, then the training split (downloads about 19 GB; about 7 hours)
+"""),
+        code('LT.stage_llm(S)'),
+        md("""
+## 4. Results
+Prints the summary and writes `ecerc_l2_distill_teacher_results.zip`. On Kaggle it's under **Output** (`ecerc_l2/ecerc_l2_distill_teacher_results.zip`).
+"""),
+        code("""
+zpath = LT.stage_package(S)
+try:
+    from google.colab import files
+    files.download(zpath)
+except ImportError:
+    print('Download this file from the Output panel ->', zpath)
+"""),
+    ]
+    write_notebook(DISTILL_TEACHER_NOTEBOOK, cells, gpu=True)
+    return files
+
+
+DISTILL_CONFIG_CELL = """
+# ===== Configuration: leave as is. (Set TRUST_DATA_PICKLE = True only if the data cell asks you to.) =====
+import os
+os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')  # deterministic GPU matrix products
+
+TRUST_DATA_PICKLE = False
+
+if os.path.isdir('/kaggle/working'):
+    WORK_DIR = '/kaggle/working/ecerc_l2'
+elif os.path.isdir('/content'):
+    WORK_DIR = '/content/ecerc_l2'
+else:
+    WORK_DIR = os.path.abspath('ecerc_l2_work')
+CONFIG = dict(
+    work_dir=WORK_DIR,
+    cache_dir='/tmp/ecerc_l2_cache',        # checkpoints; not part of the saved output
+    data_file_id='%(data_id)s',            # authors' Google Drive (linked from the official ECERC README)
+    data_filename='%(data_name)s',
+    expected_data_sha256='%(data_sha)s',  # observed in run_colab_1
+    trust_data_pickle=TRUST_DATA_PICKLE,
+    expected_split_utterances=dict(train=9989, valid=1109, test=2610),
+    expected_split_dialogues=dict(train=[1038, 1039], valid=114, test=280),
+    teacher_sha256=%(teacher_sha)s,  # train_llm.npz from notebook 8a
+    dev_llm_sha256='%(dev_sha)s',  # Experiment 7's dev_llm.npz
+    log_q_dev=%(log_q)s,  # Experiment 7's frozen calibration
+    t2_w=%(w)s,                               # Experiment 7's fusion weight
+    oof_folds=5, oof_fold_seed=2026, oof_seeds=[301, 302, 303],
+    epochs=40,                              # as in MELD/train.py
+    stage1_seeds=[101, 102, 103, 104, 105], stage2_seeds=list(range(201, 221)),
+    gate_min_gain=1.0,                      # stage 2 runs only if the cross-fitted dev gain is >= 1.0 macro-F1
+    n_folds=5, fold_seed=12345, power_B=2000,
+    a0_dev_macro_f1=%(a0)s,  # Experiment 6's A0 (reported, not decisive)
+    bootstrap_B=10000, boot_seed=20261020,
+    test_looks=4,                           # experiments 1, 4 and 7 opened the test set before this one
+    offline=False,                          # True only for the local smoke test
+)
+os.makedirs(WORK_DIR, exist_ok=True)
+print('Working directory:', WORK_DIR)
+"""
+
+
+def build_distill():
+    files = code_files()
+    for n in ('l2_pathb.py', 'l2_distill.py'):
+        files[n] = os.path.join(ROOT, 'src', n)
+    files['dev_llm.npz'] = ZEROSHOT_DEV_DUMP
+    teacher_sha = None
+    if os.path.exists(DISTILL_TEACHER_DUMP):  # embedded once notebook 8a has run and its results are in the repository
+        files['train_llm.npz'] = DISTILL_TEACHER_DUMP
+        teacher_sha = sha256(DISTILL_TEACHER_DUMP)
+    code_cell = code_files_cell(
+        files, '# Writes the verbatim ECERC files, the analysis code and the teacher files, checks their SHA-256, then sets up.\n',
+        'import l2_posthoc\nimportlib.reload(l2_posthoc)\nimport l2_pathb\nimportlib.reload(l2_pathb)\n'
+        'import l2_distill as LD\nimportlib.reload(LD)\nS = LD.stage_setup(CONFIG, CODE_DIR)\n')
+    with open(ZEROSHOT_FROZEN) as f:
+        frozen = json.load(f)
+    cells = [
+        md("""
+# ECERC Limitation 2, Experiment 8b: distilling the zero-shot LLM into ECERC
+
+Experiment 7 improved ECERC by fusing it with a zero-shot LLM at inference. Here a **single ECERC model** (unchanged architecture, features and recipe) is trained with an extra term that pulls its predictions towards soft labels, and is then evaluated **alone**. No LLM runs in this notebook.
+
+- **Teachers:** **T1** is the LLM's calibrated soft labels for the training utterances, from notebook 8a. **T2** is Experiment 7's fused system: T1 combined with ECERC predictions from models that never trained on the utterance (5 folds of training dialogues).
+- **Stage 1, dev only** (5 seeds each): the original recipe (D0), five distillation settings (D1 to D5), and two label-smoothing controls.
+- **Freeze:** the winner and every rule go to `frozen_config_distill.json`. Stage 2 runs only if a **cross-fitted** dev estimate shows at least **+1.0** macro-F1; otherwise the test set stays sealed.
+- **Stage 2, confirmatory:** 20 new seeds × {D0, winner}. The test set is evaluated **once**, at the end. This is the fourth look at the MELD test set, so the verdict uses a **Bonferroni-adjusted 98.75%** interval.
+
+Expect about 2.5 hours on a T4 if stage 2 runs. On Kaggle: **GPU T4 x2** (one is used), Internet **On**, then **Save Version → Save & Run All (Commit)**.
+"""),
+        code(DISTILL_CONFIG_CELL % dict(data_id=DATA_FILE_ID, data_name=DATA_FILENAME, data_sha=OBSERVED_DATA_SHA,
+                                        teacher_sha=repr(teacher_sha), dev_sha=ZEROSHOT_DEV_DUMP_SHA,
+                                        log_q=frozen['log_q_dev'], w=frozen['w_star'], a0=EXP6_A0_DEV)),
+        md("""
+## 1. Code and teacher files
+The four original ECERC files (verbatim), `l2_posthoc.py` and `l2_pathb.py` from the earlier experiments (unchanged), `l2_distill.py`, Experiment 7's dev log-probabilities and notebook 8a's training-split log-probabilities, embedded as base64 and checked by SHA-256. Readable copies are in `research/limitation2/`.
+"""),
+        code(code_cell),
+        md("""
+## 2. MELD features (authors' Google Drive) and data checks (only train and dev labels are read)
+"""),
+        code('LD.stage_prepare(S)'),
+        md("""
+## 3. Teacher T1: the calibrated LLM soft labels (checked against notebook 8a and Experiment 7)
+"""),
+        code('LD.stage_teacher(S)'),
+        md("""
+## 4. Teacher T2: cross-fitted ECERC (15 training runs, about 15 minutes) fused with T1
+"""),
+        code('LD.stage_oof(S)'),
+        md("""
+## 5. Stage 1: dev screen (40 training runs, about an hour) and the cross-fitted gate
+"""),
+        code('LD.stage_screen(S)'),
+        md("""
+## 6. Freeze
+"""),
+        code('LD.stage_freeze(S)'),
+        md("""
+## 7. Stage 2: confirmatory training (40 runs, about an hour; skipped if the gate failed)
+"""),
+        code('LD.stage_confirm(S)'),
+        md("""
+## 8. Test evaluation (runs once)
+"""),
+        code('LD.stage_test(S)'),
+        md("""
+## 9. Results
+Prints the summary and writes `ecerc_l2_distill_results.zip`. On Kaggle it's under **Output** (`ecerc_l2/ecerc_l2_distill_results.zip`) once the version finishes.
+"""),
+        code("""
+zpath = LD.stage_package(S)
+try:
+    from google.colab import files
+    files.download(zpath)
+except ImportError:
+    print('Download this file from the Output panel ->', zpath)
+"""),
+    ]
+    write_notebook(DISTILL_NOTEBOOK, cells, gpu=True)
+    return files
+
+
 def write_manifest(files):
     manifest = dict(
         description='Hashes and sources for research/limitation2. Regenerate with tools/build_notebook.py.',
@@ -875,10 +1101,11 @@ def write_manifest(files):
         verbatim_copies={f'ecerc_original/{n}': sha256(p) for n, p in files.items() if n in ORIGINALS},
         analysis_library={f'src/{n}': sha256(os.path.join(ROOT, 'src', n))
                           for n in ('l2_posthoc.py', 'l2_feature_leak.py', 'l2_pathb.py', 'l2_expert.py', 'l2_llm.py',
-                                    'l2_llm_worker.py', 'l2_audio.py', 'l2_zeroshot.py')},
+                                    'l2_llm_worker.py', 'l2_audio.py', 'l2_zeroshot.py', 'l2_distill_teacher.py',
+                                    'l2_distill.py')},
         notebook={os.path.relpath(p, ROOT): sha256(p)
                   for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK, LLM_NOTEBOOK, AUDIO_NOTEBOOK,
-                            ZEROSHOT_NOTEBOOK)},
+                            ZEROSHOT_NOTEBOOK, DISTILL_TEACHER_NOTEBOOK, DISTILL_NOTEBOOK)},
         checkpoints={n: dict(url=HF + f, sha256=h) for n, f, h in CHECKPOINTS},
         in_repo_checkpoint={'MELD/ECERC_MODEL.pkl': sha256(os.path.join(REPO, 'MELD', 'ECERC_MODEL.pkl'))},
         data=dict(file=DATA_FILENAME, google_drive_file_id=DATA_FILE_ID,
@@ -889,7 +1116,12 @@ def write_manifest(files):
         encoders={e['repo']: dict(revision=e['revision'], url=f'https://huggingface.co/{e["repo"]}',
                                   weights=ENCODER_WEIGHTS[e['repo']]) for e in AUDIO_ENCODERS + [TEXT_ENCODER]},
         zeroshot_llm=dict(ZEROSHOT_LLM, url=f'https://huggingface.co/{ZEROSHOT_LLM["repo"]}',
-                          note='experiment 7: frozen, zero-shot; loaded at the pinned revision'))
+                          note='experiment 7: frozen, zero-shot; loaded at the pinned revision'),
+        distillation_teacher=dict(
+            zeroshot_dev_dump={os.path.relpath(ZEROSHOT_DEV_DUMP, ROOT): ZEROSHOT_DEV_DUMP_SHA},
+            train_llm={os.path.relpath(DISTILL_TEACHER_DUMP, ROOT): sha256(DISTILL_TEACHER_DUMP)
+                       if os.path.exists(DISTILL_TEACHER_DUMP) else None},
+            note='experiment 8: notebook 8b embeds both files and refuses any other train_llm.npz'))
     with open(os.path.join(ROOT, 'MANIFEST.json'), 'w') as f:
         json.dump(manifest, f, indent=2)
         f.write('\n')
@@ -903,7 +1135,10 @@ if __name__ == '__main__':
     build_llm()
     build_audio()
     build_zeroshot()
+    build_distill_teacher()
+    build_distill()
     write_manifest(files)
     print('wrote', ', '.join(os.path.relpath(p, REPO) for p in (NOTEBOOK, LEAK_NOTEBOOK, PATHB_NOTEBOOK, EXPERT_NOTEBOOK,
-                                                                LLM_NOTEBOOK, AUDIO_NOTEBOOK, ZEROSHOT_NOTEBOOK)),
+                                                                LLM_NOTEBOOK, AUDIO_NOTEBOOK, ZEROSHOT_NOTEBOOK,
+                                                                DISTILL_TEACHER_NOTEBOOK, DISTILL_NOTEBOOK)),
           'and MANIFEST.json')

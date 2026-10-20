@@ -1,6 +1,6 @@
 # Limitation 2 (class imbalance): follow-up experiments on MELD
 
-This folder holds seven pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
+This folder holds eight pre-registered follow-up experiments on ECERC's Limitation 2, run after the Stage 0–2
 study in [`docs/report.md`](../../docs/report.md). Nothing outside `research/limitation2/` was changed. The
 original code in `MELD/` and `IEMOCAP/` is untouched; the four files this work needs were copied verbatim into
 `ecerc_original/` (their SHA-256 hashes match the originals, see `MANIFEST.json`).
@@ -11,7 +11,8 @@ is then evaluated at most once per experiment. Full write-ups are in
 [`results/FINDINGS.md`](results/FINDINGS.md) (per-run findings) and
 [`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on experiments 1–5: the
 audit of the released code, each experiment, why it happened, possible improvements and limitations).
-Experiments 6 and 7 are written up in `FINDINGS.md` only.
+Experiments 6 and 7 are written up in `FINDINGS.md` only. Experiment 8 was pre-registered on 2026-10-19 and has not been
+run yet.
 
 ## Results at a glance
 
@@ -24,6 +25,7 @@ Experiments 6 and 7 are written up in `FINDINGS.md` only.
 | 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
 | 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed (and a bge event-input arm), unchanged ECERC retrained | Kaggle T4 | no (dev gate not passed) | All four arms within 0.1 dev macro-F1 (best +0.08); the better audio trades Sadness (+2.2) against Joy (−2.4) |
 | 7 | Zero-shot Qwen2.5-32B-Instruct (4-bit, never trained on MELD labels), label-free calibration, fused with the released ECERC checkpoints by a dev-chosen weight | Kaggle 2× T4 | yes | **TRADE-OFF**: Δ macro-F1 **+3.38 [95% CI +0.64, +5.73]**, positive for all three checkpoints; Fear +7.6, Disgust +8.8, Sadness +5.7 F1; accuracy +0.9, weighted F1 +0.8; Joy −3.3 breaks the −2.0 class guardrail ([dev pilot](results/pilot_local_zeroshot_3b/README.md)) |
+| 8 | The zero-shot LLM distilled into a single ECERC model: the LLM scores the training split (8a, label-free), and ECERC is trained with an added KL term towards its soft labels (or towards Experiment 7's fused system, cross-fitted), then evaluated alone | Kaggle 2× T4 (8a), T4 (8b) | — | **Pending**: pre-registered 2026-10-19, not yet run. Cross-fitted +1.0 dev gate; 20 paired seeds; fourth test look, judged on a Bonferroni-adjusted 98.75% interval |
 
 Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
 label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), only
@@ -47,6 +49,8 @@ The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
 | `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
 | `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (done): self-supervised audio features for ECERC |
 | `notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb` | Experiment 7 (done): zero-shot LLM fused with ECERC |
+| `notebooks/ECERC_L2_distill_teacher.ipynb` | Experiment 8a (pending): the zero-shot LLM's soft labels for the training split |
+| `notebooks/ECERC_L2_distill_student.ipynb` | Experiment 8b (pending): ECERC trained with those soft labels, evaluated alone |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
@@ -54,8 +58,10 @@ The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
 | `src/l2_llm.py`, `src/l2_llm_worker.py` | Experiment 5 library and its per-GPU training/prediction worker |
 | `src/l2_audio.py` | Experiment 6 library (audio download and alignment, frozen encoders, train-only selection, screen, confirmation, test) |
 | `src/l2_zeroshot.py` | Experiment 7 library (cached zero-shot LLM scoring, label-free calibration; fusion, gate and test reuse `l2_expert.py`) |
+| `src/l2_distill_teacher.py` | Experiment 8a library (re-scoring check against Experiment 7, training-split scoring; reuses `l2_zeroshot.py`) |
+| `src/l2_distill.py` | Experiment 8b library (teachers T1 and T2, KL-distillation training, cross-fitted gate, confirmation, test) |
 | `ecerc_original/` | Verbatim copies of `MELD/model.py`, `dataloader.py`, `inference.py`, `loss.py` |
-| `tools/build_notebook.py` | Rebuilds all seven notebooks and `MANIFEST.json` after any edit to `src/` |
+| `tools/build_notebook.py` | Rebuilds all nine notebooks and `MANIFEST.json` after any edit to `src/` |
 | `tests/smoke_test*.py` | Local CPU tests of each notebook on synthetic data |
 | `ECERC_L2_followup_report.pdf` | Report on the five experiments (written 2026-10-12) |
 | `PROTOCOL.md` | Pre-registered rules, criteria and interpretation |
@@ -66,6 +72,26 @@ The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
 
 The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
 and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
+
+### Experiment 8: distillation on Kaggle, in two notebooks (pending)
+
+**8a, teacher (about 7.5 hours on GPU T4 x2, estimated from Experiment 7's 2.6 s per utterance).** Same steps as
+Experiment 7 below, with two differences:
+- import `research/limitation2/notebooks/ECERC_L2_distill_teacher.ipynb`;
+- download `ecerc_l2/ecerc_l2_distill_teacher_results.zip` from **Output** when it finishes.
+
+The notebook first re-scores 20 dev dialogues and stops if they do not match Experiment 7's saved output. Only then
+does it score the training split.
+
+**Between the two:** extract the zip to `results/run_kaggle_distill_teacher_1/` and run
+`python3 tools/build_notebook.py`. This embeds `train_llm.npz` and its SHA-256 in notebook 8b; until then, 8b stops at
+its teacher cell.
+
+**8b, distillation (about 2.5 hours on a T4 if Stage 2 runs).** Same steps as Experiment 3 below, with two differences:
+- import `research/limitation2/notebooks/ECERC_L2_distill_student.ipynb`;
+- download `ecerc_l2/ecerc_l2_distill_results.zip` from **Output** when it finishes.
+
+If the gate fails, the notebook finishes normally and the test set stays sealed.
 
 ### Experiment 7: zero-shot LLM fusion on Kaggle (about 3 hours on GPU T4 x2; the recorded run took 2 h 45 min)
 
@@ -169,6 +195,7 @@ python3 tools/build_notebook.py          # after editing anything in src/
 .venv/bin/python tests/smoke_test_llm.py      # Experiment 5; also needs transformers and peft
 .venv/bin/python tests/smoke_test_audio.py    # Experiment 6; also needs transformers, tokenizers and soundfile
 .venv/bin/python tests/smoke_test_zeroshot.py # Experiment 7; also needs transformers and tokenizers
+.venv/bin/python tests/smoke_test_distill.py  # Experiment 8, both notebooks; also needs transformers and tokenizers
 ```
 
 The smoke tests run each notebook's real code path on small synthetic data (synthetic numbers are meaningless).

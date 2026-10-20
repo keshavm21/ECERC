@@ -436,3 +436,129 @@ Bonferroni-adjusted 98.33% interval is also reported, with a flag for whether it
   excluded. Generic speaker labels avoid giving character names.
 - The pilot used a 3B model on an Apple laptop (MLX). Experiment 7 uses a 32B model on Kaggle (transformers,
   bitsandbytes), so its LLM numbers are not expected to match the pilot's.
+
+---
+
+# Addendum (2026-10-19, fixed before running): Experiment 8, distilling the zero-shot LLM into ECERC
+
+## Motivation
+- **Experiment 7** raised test macro-F1 by +3.38 [+0.64, +5.73] (TRADE-OFF: Joy −3.28), but the improved system is ECERC
+  plus a 32B LLM at inference.
+- **Question:** can a single ECERC model, trained with the zero-shot LLM's soft labels and run alone at inference,
+  keep part of that gain?
+- **Expected size: small.** Experiment 3 found that objective changes inside ECERC do not move dev macro-F1, and a
+  student sees only ECERC's input features. Distillation differs from those changes in one way: it adds per-item
+  information (a soft label from a model never trained on MELD's labels) rather than reshaping the loss. Experiment 7's
+  dev gain (+5.9) already shrank to +3.4 on test, and a student usually recovers only part of its teacher's gain.
+- **Test budget:** this would be the MELD test set's fourth look (after experiments 1, 4 and 7). The gate is therefore
+  raised to +1.0, and the efficacy condition uses a Bonferroni-adjusted interval (below).
+
+## Part A: teacher scoring of the training split (notebook 8a, Kaggle 2× T4)
+- **LLM, prompt, scoring:** identical to Experiment 7: `unsloth/Qwen2.5-32B-Instruct-bnb-4bit` @`aa79e347…`, the same
+  system and user messages (prompt SHA-256 `903ff9c0…`), the same label-token sets (checked against Experiment 7's frozen
+  ids), past context only, cached prefix, renormalised over the seven classes.
+- **Inputs:** text and speakers of the **training** dialogues only. No label of any split is given to the LLM. The test
+  split is not scored and its labels are not read.
+- **Reproducibility check (hard, before the training split is scored):** the first 20 dev dialogues are scored again and
+  compared with Experiment 7's saved dev log-probabilities (`dev_llm.npz`, SHA-256 `4b3554af…`). The argmax must agree on
+  at least 95% of those utterances; the maximum absolute difference is reported.
+- **Output:** `train_llm.npz` (log-probabilities in data-file order, dialogue keys, lengths, data-file SHA-256). Its
+  SHA-256 is recorded in `MANIFEST.json` and embedded in notebook 8b, which refuses any other file.
+
+## Part B: distillation (notebook 8b, Kaggle T4)
+Every trained and evaluated model is the unchanged ECERC class with the original features, slot routing and recipe
+(Adam lr 1e-5, weight decay 2e-4, batch 32, 40 epochs): Path B's C0 / Experiment 6's A0 code path.
+
+### Teachers (fixed before any student is trained; label-free for the item they describe)
+- **T1, the LLM alone:** p̃ = prior-matched LLM probabilities, p̃(c) ∝ p(c) / q(c) · π_train(c), with q = Experiment 7's
+  frozen mean dev prediction (`log_q_dev` of `frozen_config_zeroshot.json`, recomputed from `dev_llm.npz` and checked).
+- **T2, the Experiment 7 system as teacher:** T2 ∝ exp(0.8 · log p_ECERC-oof + 0.2 · log p̃), with w = 0.2 frozen from
+  Experiment 7.
+  - p_ECERC-oof is cross-fitted: the training dialogues are split into 5 folds (seed 2026, the feature-leak check's
+    folds). For each fold, ECERC is trained with the original recipe on the other four folds with seeds 301, 302 and
+    303, and the **last epoch** (40) is kept, so dev is not used. The three seeds' probabilities are averaged and applied
+    to the held-out fold.
+  - A training item's own label therefore never enters its teacher.
+- The SHA-256 of the final teacher arrays goes into the freeze.
+
+### Student loss
+L = (1 − α) · L_orig(y) + α · T² · mean KL(q_T ‖ p_T), where L_orig is the original MELD loss (focal-style, γ = 1, no
+class weights), p_T = softmax(student logits / T) and q_T = softmax(teacher log-probabilities / T). The extra term adds no
+random numbers, so for each seed every candidate shares the control's initialisation and data order.
+
+### Candidates
+| Candidate | Teacher | α | T |
+|---|---|---|---|
+| D0 (control) | none | 0 | — |
+| D1 | T1 | 0.3 | 1 |
+| D2 | T1 | 0.7 | 1 |
+| D3 | T2 | 0.3 | 1 |
+| D4 | T2 | 0.7 | 1 |
+| D5 | T2 | 0.7 | 2 |
+| L1 (control) | uniform (label smoothing) | 0.3 | 1 |
+| L2 (control) | uniform (label smoothing) | 0.7 | 1 |
+
+L1 and L2 test whether soft-target regularisation without per-item information explains any gain. They cannot win.
+
+### Stage 1: dev screen
+- Seeds 101 to 105 for every candidate. Every epoch's dev predictions are saved.
+- **Winner:** among D1 to D5, the highest mean (over seeds) best-epoch dev macro-F1; ties go to the earlier candidate.
+- **Gate (cross-fitted):** dev dialogues are split into 5 folds (seed 12345). For each fold, every run's epoch and the
+  winner among D1 to D5 are chosen on the other four folds, by the same rules, for the winner and for D0. The held-out
+  fold's predictions are pooled per seed across folds. The gate statistic is the mean over seeds of pooled macro-F1
+  (procedure) − pooled macro-F1 (D0). **Stage 2 runs only if it is at least +1.0.**
+- **Reported, not decisive:**
+  - the in-sample gain of the winner over D0;
+  - the winner against the better of L1 and L2;
+  - fidelity: D0 against Experiment 6's A0 on seeds 101 to 105 (55.12, 54.04, 53.21, 54.84, 53.43);
+  - a projected test SE and minimum detectable effect from a dev-dialogue bootstrap of the cross-fitted gain.
+
+### Freeze
+The teacher file and teacher-array SHA-256, the winner, seeds, checkpoint rule and criteria go to
+`frozen_config_distill.json` before any test access.
+
+### Stage 2: confirmatory
+- Seeds 201 to 220 × {D0, winner}, same initialisation and data order per seed.
+- Each run keeps its best-dev-macro-F1 epoch (earliest on ties).
+- The test set is evaluated once, after all training. No LLM runs at test time.
+
+### Statistics
+- **Primary:** the mean paired difference in test macro-F1 (winner − D0) over the 20 seeds.
+- **Intervals:** hierarchical bootstrap over seeds and test dialogues (B = 10,000, seed 20261020), reported at 95% and at
+  the Bonferroni-adjusted 98.75% level for four test looks. Seed-level t-intervals are also reported.
+
+### Verdict
+The thresholds of experiments 1 and 3 to 7 apply, with two changes because this is the fourth test look:
+- **Efficacy** requires Δ ≥ +1.0 and the **98.75%** interval's lower bound > 0.
+- **FAILURE** means the **98.75%** interval's upper bound is < +1.0.
+
+Consistency means Δ > 0 in at least 70% of seeds (14 of 20). The minority conditions (Fear and Disgust F1 change > 0)
+and the guardrails (accuracy ≥ −1.0, weighted F1 ≥ −0.5, no class below −2.0) are unchanged and judged on point
+estimates.
+
+### Diagnostics (train and dev only; interpretation, not decisions)
+- **Teacher quality, train vs dev:** T1 alone on the training split and on dev. The LLM never saw MELD's labels, so it
+  should score about the same on both; a clearly higher training score would suggest memorised training labels.
+- **Teacher quality:** p_ECERC-oof and T2 on the training split; T2 on dev, using the average of the 15 fold models.
+- **Mimicry:** mean KL(teacher ‖ student) on dev at each stage-1 run's selected epoch, for T1 and T2.
+
+## Pre-specified interpretation
+- **SUCCESS or TRADE-OFF:** a single ECERC model keeps part of the zero-shot LLM's minority-class gain with no LLM at
+  inference. If the winner also beats L1 and L2 on dev, the gain is attributed to the LLM's per-item information rather
+  than to soft targets.
+- **Gate not passed:** ECERC's input features cannot carry the LLM's judgment, consistent with Experiment 3. The
+  Experiment 7 gain needs the LLM at inference.
+- **An L control above every distillation candidate on dev:** soft-target regularisation, not the LLM, is the
+  mechanism; reported as such.
+
+## Disclosure
+- The result is reported as "ECERC trained with zero-shot LLM soft labels". The architecture and inference are those of
+  ECERC alone; the LLM is used during training only.
+- The baseline is our retrained original recipe (as in experiments 3 and 6), not the released checkpoints, so its
+  numbers are not directly comparable with Experiment 7's 50.87.
+- **Contamination:** in this experiment the LLM never processes a test utterance. LLM memorisation of the test split
+  therefore cannot reach the evaluated system. Memorised training labels could reach the teacher; the student is
+  trained on those labels anyway.
+- **Earlier dev use:** dev was used before by the Experiment 7 pilot (prompt), by Experiment 7 (w = 0.2, q) and by the
+  stage-1 checkpoint rule, so the dev gate is not fully independent of earlier choices. The test pass is single and
+  pre-registered.

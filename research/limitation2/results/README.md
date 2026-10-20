@@ -14,6 +14,8 @@ and headline numbers as printed by the notebook.
 | 6. Self-supervised audio evidence | `ecerc_l2_audio_results.zip` | `run_kaggle_audio_1/outputs_audio/` | Kaggle T4, 2026-10-18 |
 | 7. Zero-shot LLM fusion | `ecerc_l2_zeroshot_results.zip` | `run_kaggle_zeroshot_1/outputs_zeroshot/` | Kaggle 2× T4, 2026-10-18 (UTC) |
 | 7, dev-only pilot (3B, local) | — | `pilot_local_zeroshot_3b/` (script, output, dev predictions) | Apple M1 (MLX), 2026-10-19 |
+| 8a. Distillation teacher | `ecerc_l2_distill_teacher_results.zip` (when run) | `run_kaggle_distill_teacher_1/outputs_distill_teacher/` (when run) | pending; pre-registered 2026-10-19 |
+| 8b. Distillation into ECERC | `ecerc_l2_distill_results.zip` (when run) | `run_kaggle_distill_1/outputs_distill/` (when run) | pending; pre-registered 2026-10-19 |
 
 ## What a run folder contains
 
