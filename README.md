@@ -44,7 +44,7 @@ This repository is my part (**Person B**, Keshav Mishra) of a three-person cours
 | 5 | Fine-tuned Qwen2.5-7B expert fused with ECERC | Did not pass the dev gate; test not used |
 | 6 | Frozen self-supervised speech features (Whisper-large-v3 / WavLM-large) in place of ECERC's openSMILE audio, with the audio/visual routing fixed; unchanged ECERC retrained | Did not pass the dev gate (best +0.08 macro-F1); test not used. The new audio is far better on its own but trades Sadness against Joy inside ECERC |
 | 7 | Zero-shot Qwen2.5-32B-Instruct (never trained on MELD labels), label-free calibration, fused with ECERC by a dev-chosen weight | **Gain, verdict TRADE-OFF:** macro-F1 50.87 → 54.25, Δ +3.38 [+0.64, +5.73], positive for all three checkpoints. Fear F1 26.1 → 33.8, Disgust 31.4 → 40.2, Sadness 41.0 → 46.7, accuracy +0.9, weighted F1 +0.8. Joy −3.3 breaks the −2.0 class guardrail; the third-look 98.33% interval is [+0.00, +6.28] |
-| 8 | The zero-shot LLM distilled into a single ECERC model (trained with its soft labels; no LLM at inference), 20 paired seeds | **Pending**: pre-registered 2026-10-19, not yet run. It would be the fourth test look, judged on a Bonferroni-adjusted 98.75% interval behind a +1.0 cross-fitted dev gate |
+| 8 | The zero-shot LLM distilled into a single ECERC model (trained with its soft labels; no LLM at inference) | **Negative; the dev gate stopped the run, test not used.** No distilled student beat the unmodified recipe on dev (best D3, −0.51 macro-F1; cross-fitted gain −0.42 [−1.43, +0.62], gate +1.0). Label-smoothing controls were worse still |
 
 The follow-ups point to overlap between related emotions in ECERC's input features (Fear with Surprise/Sadness/Anger, Disgust with Anger) as the limit, rather than the decision rule, the loss or the training budget. Much better audio features and correct modality routing (Experiment 6) do not change this. What did help is evidence from a model with different errors: a zero-shot LLM that never saw MELD's skewed labels (Experiment 7). The gain comes from outside ECERC (the system is "ECERC + LLM"), and it costs some Joy F1.
 
@@ -101,7 +101,7 @@ My contribution:
 - **Five pre-registered follow-up experiments** ([`research/limitation2/`](research/limitation2/)) testing why the minority classes stay low: post-hoc logit adjustment of all three released checkpoints, a feature label-leak check, training-time representation changes, and fusion with a RoBERTa-large text expert and with a fine-tuned 7B LLM expert.
 - **A sixth:** ECERC retrained, unchanged, on frozen self-supervised speech features in place of its openSMILE audio, with the audio/visual routing fixed. It did not pass its dev gate.
 - **A seventh:** ECERC fused with a zero-shot 32B LLM, a partner that has never seen MELD's skewed labels. It is the first confirmed rare-emotion gain in the study: test macro-F1 +3.38 [+0.64, +5.73]. The verdict is TRADE-OFF, because Joy fell 3.3 points.
-- **An eighth, pre-registered and not yet run:** that LLM distilled into a single ECERC model, trained with its soft labels, so that no LLM is needed at inference.
+- **An eighth:** that LLM distilled into a single ECERC model, trained with its soft labels, so that no LLM is needed at inference. It did not work: every distilled student was at or below the unmodified recipe on dev (best −0.51 macro-F1; cross-fitted gain −0.42 against a +1.0 gate), so the test set was not used.
 
 ## Experimental design
 

@@ -1,0 +1,138 @@
+{
+  "candidates": [
+    {
+      "name": "D0_original",
+      "teacher": null,
+      "alpha": 0.0,
+      "T": 1.0
+    },
+    {
+      "name": "D1_T1_a0.3",
+      "teacher": "T1",
+      "alpha": 0.3,
+      "T": 1.0
+    },
+    {
+      "name": "D2_T1_a0.7",
+      "teacher": "T1",
+      "alpha": 0.7,
+      "T": 1.0
+    },
+    {
+      "name": "D3_T2_a0.3",
+      "teacher": "T2",
+      "alpha": 0.3,
+      "T": 1.0
+    },
+    {
+      "name": "D4_T2_a0.7",
+      "teacher": "T2",
+      "alpha": 0.7,
+      "T": 1.0
+    },
+    {
+      "name": "D5_T2_a0.7_T2",
+      "teacher": "T2",
+      "alpha": 0.7,
+      "T": 2.0
+    },
+    {
+      "name": "L1_uniform_a0.3",
+      "teacher": "uniform",
+      "alpha": 0.3,
+      "T": 1.0
+    },
+    {
+      "name": "L2_uniform_a0.7",
+      "teacher": "uniform",
+      "alpha": 0.7,
+      "T": 1.0
+    }
+  ],
+  "eligible": [
+    "D1_T1_a0.3",
+    "D2_T1_a0.7",
+    "D3_T2_a0.3",
+    "D4_T2_a0.7",
+    "D5_T2_a0.7_T2"
+  ],
+  "label_smoothing_controls": [
+    "L1_uniform_a0.3",
+    "L2_uniform_a0.7"
+  ],
+  "loss": "(1 - alpha) * L_orig(y) + alpha * T^2 * mean KL(q_T || p_T)",
+  "teachers": {
+    "T1": "prior-matched zero-shot LLM (notebook 8a), q = Experiment 7 frozen log_q_dev",
+    "T2": "0.8 * log p_ECERC-oof + 0.2 * log T1",
+    "oof": {
+      "folds": 5,
+      "fold_seed": 2026,
+      "seeds": [
+        301,
+        302,
+        303
+      ],
+      "epochs": 40,
+      "checkpoint": "last epoch (dev not used)"
+    }
+  },
+  "epochs": 40,
+  "stage1_seeds": [
+    101,
+    102,
+    103,
+    104,
+    105
+  ],
+  "stage2_seeds": [
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220
+  ],
+  "gate": {
+    "statistic": "cross-fitted dev gain (winner and epochs chosen without the scored fold)",
+    "folds": 5,
+    "fold_seed": 12345,
+    "threshold": 1.0
+  },
+  "test_looks": 4,
+  "criteria": {
+    "primary": "mean over stage-2 seeds of test macro-F1(winner) - macro-F1(D0), paired by seed, in points",
+    "success": [
+      "delta >= +1.0",
+      "Bonferroni-adjusted (test_looks) hierarchical-bootstrap interval lower bound > 0",
+      "mean F1 change > 0 for Fear and for Disgust",
+      "delta > 0 in at least 70% of seeds",
+      "accuracy change >= -1.0",
+      "weighted-F1 change >= -0.5",
+      "every class: mean F1 change >= -2.0"
+    ],
+    "verdict_order": [
+      "SUCCESS",
+      "TRADE-OFF (efficacy met, a guardrail fails)",
+      "PARTIAL (macro-F1 target met, Fear/Disgust/consistency not)",
+      "FAILURE (CI upper bound < +1.0)",
+      "INCONCLUSIVE"
+    ],
+    "guardrails_judged_on": "point estimates; 95% CIs reported",
+    "failure": "Bonferroni-adjusted interval upper bound < +1.0",
+    "note": "fourth test look: efficacy and FAILURE use the adjusted interval; the 95% interval is reported"
+  }
+}

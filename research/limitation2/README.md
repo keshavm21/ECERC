@@ -11,8 +11,7 @@ is then evaluated at most once per experiment. Full write-ups are in
 [`results/FINDINGS.md`](results/FINDINGS.md) (per-run findings) and
 [`ECERC_L2_followup_report.pdf`](ECERC_L2_followup_report.pdf) (a 19-page report on experiments 1–5: the
 audit of the released code, each experiment, why it happened, possible improvements and limitations).
-Experiments 6 and 7 are written up in `FINDINGS.md` only. Experiment 8 was pre-registered on 2026-10-19 and has not been
-run yet.
+Experiments 6, 7 and 8 are written up in `FINDINGS.md` only.
 
 ## Results at a glance
 
@@ -25,7 +24,7 @@ run yet.
 | 5 | Qwen2.5-7B-Instruct QLoRA expert, fused with ECERC | Kaggle 2× T4 | no (dev gate not passed) | Cross-fitted dev gain −0.98, below the +0.5 gate |
 | 6 | Self-supervised audio evidence: frozen Whisper-large-v3 / WavLM-large features replace openSMILE, audio/visual routing fixed (and a bge event-input arm), unchanged ECERC retrained | Kaggle T4 | no (dev gate not passed) | All four arms within 0.1 dev macro-F1 (best +0.08); the better audio trades Sadness (+2.2) against Joy (−2.4) |
 | 7 | Zero-shot Qwen2.5-32B-Instruct (4-bit, never trained on MELD labels), label-free calibration, fused with the released ECERC checkpoints by a dev-chosen weight | Kaggle 2× T4 | yes | **TRADE-OFF**: Δ macro-F1 **+3.38 [95% CI +0.64, +5.73]**, positive for all three checkpoints; Fear +7.6, Disgust +8.8, Sadness +5.7 F1; accuracy +0.9, weighted F1 +0.8; Joy −3.3 breaks the −2.0 class guardrail ([dev pilot](results/pilot_local_zeroshot_3b/README.md)) |
-| 8 | The zero-shot LLM distilled into a single ECERC model: the LLM scores the training split (8a, label-free), and ECERC is trained with an added KL term towards its soft labels (or towards Experiment 7's fused system, cross-fitted), then evaluated alone | Kaggle 2× T4 (8a), T4 (8b) | — | **Pending**: pre-registered 2026-10-19, not yet run. Cross-fitted +1.0 dev gate; 20 paired seeds; fourth test look, judged on a Bonferroni-adjusted 98.75% interval |
+| 8 | The zero-shot LLM distilled into a single ECERC model: the LLM scores the training split (8a, label-free), and ECERC is trained with an added KL term towards its soft labels (or towards Experiment 7's fused system, cross-fitted), then evaluated alone | Kaggle 2× T4 (8a), T4 (8b) | no (dev gate not passed) | **Negative**: no student beat the unmodified recipe on dev (best D3 −0.51 macro-F1); cross-fitted dev gain −0.42 [−1.43, +0.62] against the +1.0 gate; both label-smoothing controls were worse (−1.99, −3.88) |
 
 Taken together: the released models' minority-class errors are not a decision-threshold problem (1), not a
 label leak in the features (2), not fixed by representation or optimizer changes inside ECERC (3), only
@@ -36,7 +35,10 @@ The one intervention that worked is a partner that never saw MELD's skewed label
 with ECERC, raised test macro-F1 by 3.4 points, with the largest gains on Fear, Disgust and Sadness. The cost was
 a fall in Joy, beyond the pre-registered per-class guardrail.
 
-The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
+Distilling that LLM into a single ECERC model (8) did not keep any of the gain: every student was at or below the
+unmodified recipe on dev, so the LLM is needed at inference.
+
+The MELD test set was evaluated three times in total (experiments 1, 4 and 7). Experiment 8's dev gate stopped it before a fourth look.
 
 ## Folder layout
 
@@ -49,8 +51,8 @@ The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
 | `notebooks/ECERC_L2_llm_fusion.ipynb` | Experiment 5 (done): fine-tuned 7B LLM expert fused with ECERC |
 | `notebooks/ECERC_L2_audio_evidence.ipynb` | Experiment 6 (done): self-supervised audio features for ECERC |
 | `notebooks/ECERC_L2_zeroshot_llm_fusion.ipynb` | Experiment 7 (done): zero-shot LLM fused with ECERC |
-| `notebooks/ECERC_L2_distill_teacher.ipynb` | Experiment 8a (pending): the zero-shot LLM's soft labels for the training split |
-| `notebooks/ECERC_L2_distill_student.ipynb` | Experiment 8b (pending): ECERC trained with those soft labels, evaluated alone |
+| `notebooks/ECERC_L2_distill_teacher.ipynb` | Experiment 8a: the zero-shot LLM's soft labels for the training split |
+| `notebooks/ECERC_L2_distill_student.ipynb` | Experiment 8b: ECERC trained with those soft labels, evaluated alone (stopped at the dev gate) |
 | `src/l2_posthoc.py` | Experiment 1 library (all its logic; also provides the safe loader and metrics) |
 | `src/l2_feature_leak.py` | Experiment 2 library |
 | `src/l2_pathb.py` | Experiment 3 library (training, screening, confirmation) |
@@ -73,9 +75,9 @@ The MELD test set was evaluated three times in total (experiments 1, 4 and 7).
 The notebooks are self-contained: each embeds its library and the verbatim ECERC files, downloads the data
 and checkpoints, and checks every SHA-256. The sections below are in reverse order of the experiments.
 
-### Experiment 8: distillation on Kaggle, in two notebooks (pending)
+### Experiment 8: distillation on Kaggle, in two notebooks (the recorded runs took 7 h 25 min and 54 min)
 
-**8a, teacher (about 7.5 hours on GPU T4 x2, estimated from Experiment 7's 2.6 s per utterance).** Same steps as
+**8a, teacher (7 h 25 min of scoring on GPU T4 x2).** Same steps as
 Experiment 7 below, with two differences:
 - import `research/limitation2/notebooks/ECERC_L2_distill_teacher.ipynb`;
 - download `ecerc_l2/ecerc_l2_distill_teacher_results.zip` from **Output** when it finishes.
@@ -87,7 +89,7 @@ does it score the training split.
 `python3 tools/build_notebook.py`. This embeds `train_llm.npz` and its SHA-256 in notebook 8b; until then, 8b stops at
 its teacher cell.
 
-**8b, distillation (about 2.5 hours on a T4 if Stage 2 runs).** Same steps as Experiment 3 below, with two differences:
+**8b, distillation (54 min in the recorded run, which stopped at the dev gate; about 2.5 hours if Stage 2 runs).** Same steps as Experiment 3 below, with two differences:
 - import `research/limitation2/notebooks/ECERC_L2_distill_student.ipynb`;
 - download `ecerc_l2/ecerc_l2_distill_results.zip` from **Output** when it finishes.
 

@@ -40,7 +40,7 @@ A sixth follow-up tested the input-feature explanation directly (§8.7). It retr
 
 A seventh follow-up fused ECERC with a zero-shot 32B LLM that has never been trained on MELD's labels (§8.8). It gave the study's first confirmed gain on the rare emotions. Test macro-F1 rose from 50.87 to 54.25 (Δ +3.38, 95% CI [+0.64, +5.73]), positive with every released checkpoint, with Fear F1 +7.6, Disgust +8.8 and Sadness +5.7, and accuracy and weighted F1 up slightly. The pre-registered verdict is TRADE-OFF, because Joy fell 3.3 points.
 
-An eighth follow-up, pre-registered on 2026-10-19 and **not yet run**, distils that LLM into a single ECERC model, so that no LLM is needed at inference (§8.9).
+An eighth follow-up distilled that LLM into a single ECERC model, so that no LLM would be needed at inference (§8.9). It did not work. No distilled student beat the unmodified recipe on dev (best −0.51 macro-F1, cross-fitted gain −0.42 against a +1.0 gate), so the test set was not used.
 
 ---
 
@@ -404,7 +404,7 @@ These experiments differ from Stages 0–2 in three ways:
 | 5 | Qwen2.5-7B LLM expert fused with ECERC | no (dev gate) | gate not passed |
 | 6 | Self-supervised audio evidence for ECERC | no (dev gate) | gate not passed |
 | 7 | Zero-shot LLM fused with ECERC (§8.8) | yes | TRADE-OFF: macro-F1 +3.38 [+0.64, +5.73]; Joy guardrail fails |
-| 8 | Zero-shot LLM distilled into ECERC (§8.9) | — | pending: pre-registered, not yet run |
+| 8 | Zero-shot LLM distilled into ECERC (§8.9) | no (dev gate) | gate not passed: cross-fitted dev gain −0.42 |
 
 ### 8.1 Experiment 1: post-hoc logit adjustment
 
@@ -553,9 +553,9 @@ The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum 
   - The LLM's pretraining may include Friends transcripts or MELD's public files. On its own, though, it is not better than ECERC overall: weighted F1 is 63.1 vs 66.5.
   - The pilot that fixed the prompt used dev, so the dev gate was not independent of it.
 
-### 8.9 Experiment 8 (pre-registered, not yet run): distilling the zero-shot LLM into ECERC
+### 8.9 Experiment 8: distilling the zero-shot LLM into ECERC
 
-Experiment 7's gain needs a 32B LLM at inference. Experiment 8 asks whether a single ECERC model can keep part of it without one. ECERC is trained with an added KL term towards soft labels and is then evaluated alone.
+Experiment 7's gain needs a 32B LLM at inference. Experiment 8 asked whether a single ECERC model can keep part of it without one. ECERC is trained with an added KL term towards soft labels and is then evaluated alone.
 
 - **Teachers.** The LLM of Experiment 7, unchanged, scores the training utterances (notebook 8a). This step is label-free, and the test split is not scored.
   - T1 is the LLM's calibrated output.
@@ -563,11 +563,31 @@ Experiment 7's gain needs a 32B LLM at inference. Experiment 8 asks whether a si
 - **Design.** ECERC's architecture, features and recipe are unchanged.
   - A 5-seed dev screen covers five distillation settings and two label-smoothing controls.
   - A cross-fitted +1.0 dev gate is followed by a 20-seed paired confirmation against the original recipe.
-  - This would be the fourth test look, so efficacy is judged on a Bonferroni-adjusted 98.75% interval.
-- **Expected effect: small.** Experiment 3 found that objective changes inside ECERC do not move dev macro-F1, and a student sees only ECERC's input features.
+  - This would have been the fourth test look, so efficacy would be judged on a Bonferroni-adjusted 98.75% interval.
 - **Contamination.** The LLM never processes a test utterance, so LLM memorisation of the test split cannot reach the evaluated model.
 
 The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum of 2026-10-19, Experiment 8). The notebooks are `research/limitation2/notebooks/ECERC_L2_distill_teacher.ipynb` (8a) and `ECERC_L2_distill_student.ipynb` (8b).
+
+**Run.** Kaggle, 2026-10-19 (8a, 2× T4, 7 h 25 min of scoring) and 2026-10-20 (8b, T4, 54 min).
+
+- All integrity checks passed (17 in 8a, 18 in 8b). Re-scoring 20 dev dialogues reproduced Experiment 7's output exactly (100% argmax agreement, maximum difference 0.0000). The unmodified-recipe control D0 reproduced Experiment 6's A0 on all five seeds.
+- The teachers carry real signal on dev: T1 54.3 macro-F1, T2 60.3, against 54.1 for ECERC itself.
+
+| Dev, 5 seeds | Macro-F1 | vs D0 |
+|---|---|---|
+| D0 original recipe | 54.13 | 0.00 |
+| D1 T1, α 0.3 | 52.80 | −1.33 |
+| D2 T1, α 0.7 | 50.74 | −3.39 |
+| **D3 T2, α 0.3 (winner)** | 53.62 | −0.51 |
+| D4 T2, α 0.7 | 52.04 | −2.09 |
+| D5 T2, α 0.7, T 2 | 51.92 | −2.20 |
+| L1 uniform, α 0.3 (control) | 52.14 | −1.99 |
+| L2 uniform, α 0.7 (control) | 50.25 | −3.88 |
+
+- **Gate not passed.** The cross-fitted dev gain was −0.42 (bootstrap 95% interval [−1.43, +0.62]) against the pre-registered +1.0, so Stage 2 was skipped and the test set stayed sealed. D3 was the winner in all five folds.
+- **The students did learn from the teachers.** Their dev KL to T2 fell from 0.388 (D0) to 0.325 (D3), yet macro-F1 did not rise. Fear and Disgust F1 matched D0 (33.9 vs 33.8; 34.7 vs 34.8) and Sadness F1 fell (42.4 vs 43.7); none rose.
+- **Against the controls.** D3 beat the better label-smoothing control by +1.48, so the LLM's per-item information did better than plain smoothing. It still ended below the unmodified recipe, and more weight on the teacher (α 0.7) was always worse than α 0.3.
+- **Reading.** What made Experiment 7 work was the LLM reading the text at inference. A student sees only ECERC's precomputed features, so it cannot absorb that. The conclusion is limited to this setup (feature-level student, these two teachers, KL on the training split).
 
 ## 9. Limitations of this study
 
@@ -586,7 +606,7 @@ The rules are in [`PROTOCOL.md`](../research/limitation2/PROTOCOL.md) (addendum 
 Two of the follow-ups proposed in the first version of this report were carried out in §8: post-hoc per-class decision-rule changes (Experiment 1) and representation-level methods, including a confusion-aware contrastive term on the fused features (Experiment 3). Neither helped. Still open:
 
 - **Better evidence features.** §8 points to the precomputed input features as the limit. A text expert that reads the raw dialogue (Experiment 4) improved Fear but not macro-F1; a confirmatory test would need a larger effect or a larger test set, since MELD's test set resolves only fusion effects of about 2.6 macro-F1 points. Much stronger audio features inside ECERC itself did not help either (Experiment 6, §8.7). A zero-shot LLM partner did (Experiment 7, §8.8). Natural next steps are to:
-  - distil its predictions into ECERC, so that no LLM is needed at inference (pre-registered as Experiment 8, §8.9);
+  - distilling its predictions into ECERC was tried (Experiment 8, §8.9) and gave no gain, so an LLM at inference remains the only route found;
   - reduce the Joy cost, for example with class-specific fusion weights chosen on more data than MELD's dev set;
   - test the fusion on a second dataset.
 - **Decoupled classifier re-training** (e.g. cRT) and **more seeds** per configuration, which were not tried.

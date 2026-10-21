@@ -380,3 +380,70 @@ per-class guardrail fails: Joy F1 fell by 3.28, beyond the −2.0 limit.
    - This was the third test look, and the multiplicity-adjusted interval only reaches zero.
    - The dev pilot that fixed the prompt used dev, so the dev gate was not independent of it; the test pass was
      single and pre-registered.
+
+---
+
+# Findings: run_kaggle_distill_teacher_1 and run_kaggle_distill_1 (Experiment 8, distilling the zero-shot LLM into ECERC)
+
+**Runs:** 8a on 2026-10-19, Kaggle 2× Tesla T4 (445 minutes to score the training split); 8b on 2026-10-20, Kaggle Tesla T4
+(54 minutes). Outputs are in `run_kaggle_distill_teacher_1/outputs_distill_teacher/` and
+`run_kaggle_distill_1/outputs_distill/`.
+
+**Integrity:**
+- All checks passed with no warnings: 17 in 8a and 18 in 8b.
+- 8a re-scored 20 dev dialogues (229 utterances) before touching the training split. Argmax agreement with experiment 7
+  was 100.0% and the maximum absolute difference 0.0000, so the teacher is the same model as in experiment 7.
+- 8a covers 9,989 training utterances in 1,038 dialogues. The seven label words carried 99.8% of the next-token
+  probability on average. The test split was not scored and no test label was read.
+- `train_llm.npz` has SHA-256 `8c810de775b0e5a6…`; 8b refused any other file and recorded the same hash.
+- **D0 reproduces experiment 6's A0 exactly** on all five shared seeds (55.12, 54.04, 53.21, 54.84, 53.43), so the
+  student code path and recipe are the original ones.
+- The test set was not touched; it has still been evaluated three times (experiments 1, 4 and 7).
+
+## Verdict: the gate stopped the run after Stage 1
+The cross-fitted dev gain was −0.42 (bootstrap 95% interval [−1.43, +0.62]), against a pre-registered gate of +1.0.
+Stage 2 and the test evaluation were skipped. The freeze (`frozen_config_distill.json`, hash `88357312…`) records
+`proceed: false`. The in-sample gain of the screen winner was also negative (−0.51).
+
+**Teachers (train and dev only; macro-F1):**
+
+| Teacher | Train | Dev |
+|---|---|---|
+| T1, calibrated LLM | 51.39 | 54.32 |
+| ECERC cross-fitted (training folds) | 58.50 | — |
+| T2, experiment 7's system | 58.00 | 60.25 |
+
+**Stage 1 (dev, 5 seeds per candidate; each run at its best-dev-macro-F1 epoch):**
+
+| Candidate | Teacher, α, T | Dev macro-F1 (SD) | vs D0 | Dev KL to T2 |
+|---|---|---|---|---|
+| D0 original | none | 54.13 (0.84) | 0.00 | 0.388 |
+| D1 | T1, 0.3, 1 | 52.80 (0.35) | −1.33 | 0.329 |
+| D2 | T1, 0.7, 1 | 50.74 (0.31) | −3.39 | 0.308 |
+| D3 (winner) | T2, 0.3, 1 | 53.62 (0.76) | −0.51 | 0.325 |
+| D4 | T2, 0.7, 1 | 52.04 (0.73) | −2.09 | 0.290 |
+| D5 | T2, 0.7, 2 | 51.92 (0.77) | −2.20 | 0.319 |
+| L1 control | uniform, 0.3, 1 | 52.14 (0.86) | −1.99 | 0.613 |
+| L2 control | uniform, 0.7, 1 | 50.25 (1.35) | −3.88 | 0.968 |
+
+Winner D3 against D0, per class (dev F1, mean over seeds): Neutral 78.5 vs 79.4, Surprise 65.3 vs 65.8, Fear 33.9 vs
+33.8, Sadness 42.4 vs 43.7, Joy 63.3 vs 63.0, Disgust 34.7 vs 34.8, Anger 57.1 vs 58.3. The winner was D3 in all five
+cross-fitting folds. Projected test SE 0.32; the minimum detectable effect at the adjusted level is 1.08.
+
+## Interpretation
+1. **The idea did not work in this setup.** Every distilled student was below the unmodified recipe on dev, and a
+   larger weight on the teacher (α 0.7) was always worse than α 0.3. The gate worked as intended: it stopped the run
+   before a fourth look at the test set.
+2. **The students did take on the teachers' outputs, but the gain did not follow.** Dev KL to T2 fell from 0.388 (D0)
+   to 0.325 (D3), and further for α 0.7. Macro-F1 did not rise, and none of Fear, Disgust or Sadness gained: the
+   classes that experiment 7 improved are not improved by a student that imitates it.
+3. **The LLM's information helped relative to plain smoothing.** D3 beat the better label-smoothing control (L1) by
+   +1.48, and L1 and L2 were both worse than D0. But soft-target training inside ECERC cost more than the teacher
+   information returned.
+4. **Likely reason (not tested here).** Experiment 7's gain comes from an LLM that reads the dialogue text at
+   inference. The student sees only ECERC's precomputed features, which have already been shown to limit it
+   (experiments 3 and 6). Training with soft labels cannot add to those features what the LLM extracts from the raw
+   text.
+5. **Scope of the conclusion.** It covers a feature-level student with these two teachers and a KL term on the training
+   split. It does not exclude other distillation designs, such as a student that reads the raw text. For ECERC as
+   released, the zero-shot LLM at inference (experiment 7) remains the only intervention found that raises rare-emotion F1.
